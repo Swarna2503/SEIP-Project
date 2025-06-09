@@ -1,23 +1,26 @@
 // src/pages/ReviewEditPDFPage.tsx
 
 import React, { useRef, useEffect } from "react";
-// “import type” means PDFViewerHandle is erased at runtime (no missing‐export error)
+// import the PDFViewer and its handle type
 import PDFViewer, { type PDFViewerHandle } from "../components/PDFViewer";
 import { fillAndFlattenPdf, downloadPdf } from "../utils/pdfUtils";
 
 export default function ReviewEditPDFPage() {
-  // Attach a ref to our PDFViewer so that we can call getFormData() later
+  // Attach a ref so we can call getFormData() on the viewer
   const viewerRef = useRef<PDFViewerHandle>(null);
 
   useEffect(() => {
-    console.log("[ReviewEditPDFPage] Mounted. viewerRef =", viewerRef.current);
+    console.log(
+      "[ReviewEditPDFPage] Mounted. viewerRef =",
+      viewerRef.current
+    );
   }, []);
 
   async function handleSignAndSubmit() {
     console.log("[ReviewEditPDFPage] ▶️ Sign & Submit clicked");
 
     try {
-      // 1) Grab the raw PDF bytes from public/
+      // 1) Fetch the blank PDF from public/
       const res = await fetch("/130-U-fillable.pdf");
       console.log(
         "[ReviewEditPDFPage] 📥 fetched /130-U-fillable.pdf, status =",
@@ -25,19 +28,25 @@ export default function ReviewEditPDFPage() {
       );
       const originalPdfBytes = await res.arrayBuffer();
 
-      // 2) Pull form values from PDFViewer via the ref
+      // 2) Pull filled‐in values from the PDFViewer
       const formData = viewerRef.current?.getFormData() || {};
       console.log("[ReviewEditPDFPage] Current formData =", formData);
 
-      // 3) Use pdf-lib (inside fillAndFlattenPdf) to produce a flattened PDF
-      const filledBytes = await fillAndFlattenPdf(originalPdfBytes, formData);
+      // 3) Generate a flattened, filled PDF via pdf-lib
+      const filledBytes = await fillAndFlattenPdf(
+        originalPdfBytes,
+        formData
+      );
       console.log("[ReviewEditPDFPage] 🎉 PDF filled & flattened");
 
-      // 4) Trigger browser download
+      // 4) Trigger download in the browser
       downloadPdf(filledBytes, "130-U-filled.pdf");
       console.log("[ReviewEditPDFPage] 💾 downloadPdf invoked");
     } catch (err) {
-      console.error("[ReviewEditPDFPage] ❌ Error during Sign & Submit:", err);
+      console.error(
+        "[ReviewEditPDFPage] ❌ Error during Sign & Submit:",
+        err
+      );
     }
   }
 
@@ -48,8 +57,12 @@ export default function ReviewEditPDFPage() {
       </h1>
 
       <div className="bg-white rounded shadow p-4">
-        {/* Mount our PDFViewer and attach the ref */}
-        <PDFViewer ref={viewerRef} url="/130-U-fillable.pdf" />
+        {/** Pass a zoom factor here to scale the PDF & overlays */}
+        <PDFViewer
+          ref={viewerRef}
+          url="/130-U-fillable.pdf"
+          zoom={2}      
+        />
 
         <div className="mt-4">
           <button
