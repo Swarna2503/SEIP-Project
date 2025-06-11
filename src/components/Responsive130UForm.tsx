@@ -1,0 +1,242 @@
+// src/components/Responsive130UForm.tsx
+import React, { useState, useEffect } from "react";
+
+interface FieldDef {
+  id: string;
+  label: string;
+  type: "text" | "checkbox";
+  required?: boolean;
+}
+
+interface Responsive130UFormProps {
+  /** Callback invoked on every change with the full form state */
+  onChange?: (state: Record<string, string | boolean>) => void;
+}
+
+
+const fields: FieldDef[] = [
+  // 0–3: “Applying for” checkboxes
+  { id: "titleRegistration",           label: "Title & Registration",                  type: "checkbox" },
+  { id: "titleOnly",                   label: "Title Only",                              type: "checkbox" },
+  { id: "registrationPurposesOnly",    label: "Registration Purposes Only",               type: "checkbox" },
+  { id: "nonTitleRegistration",        label: "Nontitle Registration",                   type: "checkbox" },
+
+  // 4–6: “Corrected title or registration, check reason”
+  { id: "vehicleDescription",          label: "Vehicle Description",                     type: "checkbox" },
+  { id: "addRemoveLien",               label: "Add/Remove Lien",                        type: "checkbox" },
+  { id: "otherReason",                 label: "Other (specify below)",                  type: "checkbox" },
+
+  // 7: “Other reason” free-form
+  { id: "otherReasonText",             label: "Other Reason For Correction",             type: "text" },
+
+  // 8–14: Vehicle details
+  { id: "vehicleIdentificationNumber", label: "1. Vehicle Identification Number",        type: "text" },
+  { id: "vehicleYear",                 label: "2. Year",                                 type: "text" },
+  { id: "vehicleMake",                 label: "3. Make",                                 type: "text" },
+  { id: "vehicleBodyStyle",            label: "4. Body Style",                           type: "text" },
+  { id: "vehicleModel",                label: "5. Model",                                type: "text" },
+  { id: "majorColor",                  label: "6. Major Color",                          type: "text" },
+  { id: "minorColor",                  label: "7. Minor Color",                          type: "text" },
+
+  //15-22
+
+  { id: "texasLicensePlate",          label: "8. Texas License Plate No",                       type: "text" },
+  { id: "odometerReading",            label: "9. Odometer Reading (no tenths)",                 type: "text" },
+  { id: "notActualMileage",           label: "Not Actual",                                      type: "checkbox" },
+  { id: "exceedsMechanicalLimits",    label: "Exceeds Mechanical Limits",                       type: "checkbox" },
+  { id: "exemptMileage",              label: "Exempt",                                          type: "checkbox" },
+  { id: "emptyWeight",                label: "11. Empty Weight",                                type: "text" },
+  { id: "carryingCapacity",           label: "12. Carrying Capacity (if any)",                  type: "text" },
+
+  //23-29
+
+  { id: "individual",                 label: "Individual",                                      type: "checkbox" },
+  { id: "business",                   label: "Business",                                        type: "checkbox" },
+  { id: "government",                 label: "Government",                                      type: "checkbox" },
+  { id: "trust",                      label: "Trust",                                           type: "checkbox" },
+  { id: "nonProfit",                  label: "NonProfit",                                       type: "checkbox" },
+  { id: "photoIdNumber",             label: "14. Applicant Photo ID Number or FEIN/EIN",       type: "text" },
+
+  //
+
+  { id: "usDriverLicense",           label: "U.S. Driver License/ID Card",                     type: "checkbox" },
+  { id: "stateOfId",                 label: "State of ID/DL",                                  type: "text" },
+  { id: "passport",                  label: "Passport",                                        type: "checkbox" },
+  { id: "passportIssued",           label: "Passport Issued",                                  type: "text" },
+  { id: "uscisId",                   label: "U.S. Citizenship & Immigration Services/DOJ ID",   type: "checkbox" },
+  { id: "natoId",                    label: "NATO ID",                                          type: "checkbox" },
+  { id: "usMilitaryId",             label: "US Military ID",                                   type: "checkbox" },
+  { id: "militaryStatusId",         label: "Other Military Status of Forces Photo ID",         type: "checkbox" },
+  { id: "usDeptStateId",            label: "US Dept of State ID",                              type: "checkbox" },
+  { id: "usDeptHomelandId",         label: "US Dept of Homeland Security ID",                  type: "checkbox" },
+
+//
+
+  { id: "applicantName",            label: "16. Applicant First Name or Entity Name...",       type: "text" },
+
+//
+  { id: "additionalApplicantName",  label: "17. Additional Applicant First Name...",           type: "text" },
+
+//
+  { id: "applicantAddress",         label: "18. Applicant Mailing Address City State Zip",     type: "text" },
+  { id: "applicantCounty",          label: "19. Applicant County of Residence",                type: "text" },
+//
+  { id: "previousOwner",            label: "20. Previous Owner Name or Entity Name...",        type: "text" },
+  { id: "dealerGDN",                label: "21. Dealer GDN (if applicable)",                   type: "text" },
+  { id: "unitNumber",               label: "22. Unit Number (if applicable)",                  type: "text" },
+//
+  { id: "renewalRecipient",         label: "23. Renewal Recipient First Name or Entity Name...", type: "text" },
+//
+  { id: "renewalAddress",           label: "24. Renewal Notice Mailing Address...",            type: "text" },
+//
+  { id: "phoneNumber",              label: "25. Applicant Phone Number (optional)",            type: "text" },
+  { id: "email",                    label: "26. Email (optional)",                             type: "text" },
+  { id: "emailConsent",             label: "Yes Provide Email in 26",                          type: "checkbox" },
+  { id: "attachVTR216",             label: "Yes Attach Form VTR-216",                          type: "checkbox" },
+//
+  { id: "vehicleLocation",          label: "29. Vehicle Location Address if different...",     type: "text" },
+//
+  { id: "attachVTR267",             label: "Yes Attach Form VTR-267",                          type: "checkbox" },
+  { id: "noElectronicTitle",        label: "Yes Cannot check 30",                              type: "checkbox" },
+  { id: "lienholderId",             label: "32. Certified/eTitle Lienholder ID Number",        type: "text" },
+  { id: "firstLienDate",            label: "33. First Lien Date (if any)",                     type: "text" },
+//
+  { id: "lienholderNameAddress",    label: "34. First Lienholder Name and Mailing Address",     type: "text" },
+//
+  { id: "rentalPermit",             label: "I Hold Motor Vehicle Retailer (Rental) Permit Number", type: "checkbox" },
+  { id: "permitNumber",             label: "Permit Number",                                    type: "text" },
+  { id: "dealerOrLessor",           label: "Yes, I am a dealer or lessor that qualifies...",    type: "checkbox" },
+//
+  { id: "gdnOrLessorNumber",        label: "GDN or Lessor Number",                             type: "text" },
+  { id: "tradeIn",                  label: "Trade-in (if any)",                                type: "checkbox" },
+  { id: "tradeInDetails",           label: "36. Trade-In if any Year Make VIN",                type: "text" },
+  { id: "additionalTradeIns",       label: "Additional Trade-ins",                             type: "checkbox" },
+//
+  { id: "salesAndUseTax",           label: "Sales and Use Tax",                                type: "checkbox" },
+  { id: "rebateAmount",             label: "Rebate Amount",                                    type: "text" },
+  { id: "salesPriceMinusRebate",    label: "Sales Price Minus Rebate Amount",                  type: "text" },
+  { id: "tradeInAmount",            label: "Trade In Amount",                                  type: "text" },
+  { id: "fmvDeduction",             label: "Fair Market Value Deduction",                      type: "text" },
+  { id: "taxableAmount",            label: "Taxable Amount",                                   type: "text" },
+  { id: "taxOnTaxableAmount",       label: "6.25% Tax on Taxable Amount",                      type: "text" },
+  { id: "penalty5Percent",          label: "Late Tax Payment Penalty of 5%",                   type: "checkbox" },
+  { id: "penalty10Percent",         label: "Late Tax Payment Penalty of 10%",                  type: "checkbox" },
+  { id: "penaltyAmount",            label: "Late Tax Payment Penalty Amount",                  type: "text" },
+  { id: "stateTaxesPaidTo",         label: "State Taxes Were Paid To",                         type: "text" },
+  { id: "amountTaxesPaid",          label: "Amount of Taxes Paid to Previous State",           type: "text" },
+  { id: "amountDue",                label: "Amount of Tax and Penalty Due",                    type: "text" },
+  { id: "newResidentTax",           label: "$90 New Resident Tax",                             type: "checkbox" },
+  { id: "previousState",            label: "Resident's previous state",                        type: "text" },
+  { id: "evenTradeTax",             label: "$5 Even Trade Tax",                                type: "checkbox" },
+  { id: "giftTax",                  label: "$10 Gift Tax Attach Comptroller Form 14-317",      type: "checkbox" },
+  { id: "salvageFee",               label: "$65 Rebuilt Salvage Fee",                          type: "checkbox" },
+  { id: "emissionsFee25",           label: "2.5% Emissions Fee",                               type: "text" },
+  { id: "emissionsFee25Diesel",     label: "2.5% Emissions Fee Diesel Vehicles 1996...",       type: "checkbox" },
+  { id: "emissionsFee1",            label: "1% Emissions Fee",                                 type: "text" },
+  { id: "emissionsFee1Diesel",      label: "1% Emissions Fee Diesel Vehicles 1997...",         type: "checkbox" },
+  { id: "taxExemptionReason",       label: "Sales Tax Exemption Reason",                       type: "text" },
+  { id: "applicationFee",           label: "$28 or $33 Application Fee for Texas Title",       type: "checkbox" },
+  { id: "inspectionVerified",       label: "Check if applicable I have physically inspected...", type: "checkbox" },
+  { id: "unrecoveredStolen",        label: "The vehicle is unrecovered stolen...",             type: "checkbox" },
+  //
+  { id: "correctedTitleLost",       label: "I certify I am applying for a corrected title...", type: "checkbox" },
+  { id: "sellerName",               label: "Seller Name",                                      type: "text" },
+  { id: "sellerDate",               label: "Date",                                             type: "text" },
+  { id: "applicantOwner",           label: "Applicant Owner",                                  type: "text" },
+  { id: "applicantDate",            label: "Date_2",                                           type: "text" },
+  { id: "additionalApplicant",      label: "Additional Applicant",                             type: "text" },
+  { id: "additionalApplicantDate",  label: "Date_3",                                           type: "text" }
+
+];
+
+// Define sections by index ranges
+const sections = [
+  { title: "Applying For",            from: 0,   to: 3   },
+  { title: "Correction Reason",       from: 4,   to: 7   },
+  { title: "Vehicle Details",         from: 8,   to: 14  },
+  { title: "Odometer & Weights",      from: 15,  to: 21  },
+  { title: "Applicant Type & ID",     from: 22,  to: 37  },
+  { title: "Names & Addresses",       from: 38,  to: 46  },
+  { title: "Contact & Renewal",       from: 47,  to: 51  },
+  { title: "Lien Information",        from: 52,  to: 56  },
+  { title: "Motor Vehicle Tax",       from: 57,  to: 88  },
+  { title: "Certify & Sign",          from: 89,  to: 97  },
+];
+
+export default function Responsive130UForm({ onChange }: Responsive130UFormProps) {
+  const [formState, setFormState] = useState<Record<string, string | boolean>>(
+    () => fields.reduce((acc, f) => {
+      acc[f.id] = f.type === "checkbox" ? false : "";
+      return acc;
+    }, {} as Record<string, string | boolean>)
+  );
+
+  // Whenever formState changes, notify parent via onChange
+  useEffect(() => {
+    onChange?.(formState);
+  }, [formState, onChange]);
+
+  const handleChange = (id: string, value: string | boolean) => {
+    setFormState((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Form submitted:", formState);
+  };
+
+  const renderField = (f: FieldDef) => {
+    if (f.type === "checkbox") {
+      return (
+        <div key={f.id} className="flex items-center">
+          <input
+            id={f.id}
+            type="checkbox"
+            checked={Boolean(formState[f.id])}
+            onChange={(e) => handleChange(f.id, e.target.checked)}
+            className="mr-2"
+          />
+          <label htmlFor={f.id} className="text-sm">
+            {f.label}{f.required && <span className="text-red-500">*</span>}
+          </label>
+        </div>
+      );
+    }
+    return (
+      <div key={f.id} className="flex flex-col">
+        <label htmlFor={f.id} className="text-sm mb-1">
+          {f.label}{f.required && <span className="text-red-500">*</span>}
+        </label>
+        <input
+          id={f.id}
+          type="text"
+          value={String(formState[f.id] || "")}
+          onChange={(e) => handleChange(f.id, e.target.value)}
+          className="w-full border rounded px-2 py-1 text-sm"
+        />
+      </div>
+    );
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-8 p-4 bg-white rounded shadow">
+      {sections.map(({ title, from, to }) => (
+        <section key={title}>
+          <h2 className="text-lg font-semibold mb-4">{title}</h2>
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {fields.slice(from, to + 1).map(renderField)}
+          </div>
+        </section>
+      ))}
+
+      <div className="text-center">
+        <button
+          type="submit"
+          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Submit
+        </button>
+      </div>
+    </form>
+  );
+}

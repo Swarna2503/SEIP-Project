@@ -1,8 +1,23 @@
 // src/App.tsx
-
 import React from "react";
-import ReviewEditPDFPage from "./pages/ReviewEditPDFPage";
+import { Routes, Route } from "react-router-dom";
+
+import OCRPage from "./pages/OCRPage";
+import ResponsiveFormPage from "./pages/responsive-form";
+import ReviewSubmitPage from "./pages/ReviewSubmitPage";
 
 export default function App() {
-  return <ReviewEditPDFPage />;
+  return (
+    <Routes>
+      <Route path="/" element={<OCRPage />} />
+      <Route
+        path="/responsive-form"
+        element={<ResponsiveFormPage />}
+      />
+      <Route
+        path="/review-submit"
+        element={<ReviewSubmitPage />}
+      />
+    </Routes>
+  );
 }
