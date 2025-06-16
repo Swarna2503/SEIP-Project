@@ -73,35 +73,60 @@ const fields: FieldDef[] = [
 //
 
   { id: "applicantName",            label: "16. Applicant First Name or Entity Name...",       type: "text" },
+  { id: "applicantMiddleName",      label: " Applicant Middle Name",       type: "text" },
+  { id: "applicantLastName",      label: " Applicant Last Name",       type: "text" },
+  { id: "applicantSuffix",            label: "16. Applicant Suffix",       type: "text" },
+
 
 //
   { id: "additionalApplicantName",  label: "17. Additional Applicant First Name...",           type: "text" },
+  { id: "additionalApplicantMiddleName",      label: " Applicant Middle Name",       type: "text" },
+  { id: "additionalApplicantLastName",      label: " Applicant Last Name",       type: "text" },
+  { id: "additionalApplicantSuffix",            label: "16. Applicant Suffix",       type: "text" },
 
 //
-  { id: "applicantAddress",         label: "18. Applicant Mailing Address City State Zip",     type: "text" },
+  { id: "applicantMailingAddress",         label: "18. Applicant Mailing Address",     type: "text" },
+  { id: "applicantCity",         label: " Applicant City",     type: "text" },
+  { id: "applicantState",         label: "Applicant State",     type: "text" },
+  { id: "applicantZip",         label: "Applicant Zip",     type: "text" },
   { id: "applicantCounty",          label: "19. Applicant County of Residence",                type: "text" },
 //
-  { id: "previousOwner",            label: "20. Previous Owner Name or Entity Name...",        type: "text" },
+  { id: "previousOwner",            label: "20. Previous Owner Name ",        type: "text" },
+  { id: "previousCity",            label: "Previous Owner City",        type: "text" },
+  { id: "previousState",            label: "Previous Owner State ",        type: "text" },
   { id: "dealerGDN",                label: "21. Dealer GDN (if applicable)",                   type: "text" },
   { id: "unitNumber",               label: "22. Unit Number (if applicable)",                  type: "text" },
 //
-  { id: "renewalRecipient",         label: "23. Renewal Recipient First Name or Entity Name...", type: "text" },
+  { id: "renewalRecipientFirstName",         label: "23. Renewal Recipient First Name", type: "text" },
+  { id: "renewalRecipientMiddleName",         label: "Renewal Recipient First Name", type: "text" },
+  { id: "renewalRecipientLastName",         label: "Renewal Recipient First Name", type: "text" },
+  { id: "renewalRecipientSuffix",         label: "Renewal Recipient First Name", type: "text" },
 //
-  { id: "renewalAddress",           label: "24. Renewal Notice Mailing Address...",            type: "text" },
+  { id: "renewalMailingAddress",           label: "24. Renewal Notice Mailing Address",            type: "text" },
+  { id: "renewalCity",           label: "Renewal Notice City",            type: "text" },
+  { id: "renewalState",           label: "Renewal Notice Mailing State",            type: "text" },
+  { id: "renewalZip",           label: "Renewal Notice Mailing Zip",            type: "text" },
 //
   { id: "phoneNumber",              label: "25. Applicant Phone Number (optional)",            type: "text" },
   { id: "email",                    label: "26. Email (optional)",                             type: "text" },
   { id: "emailConsent",             label: "Yes Provide Email in 26",                          type: "checkbox" },
   { id: "attachVTR216",             label: "Yes Attach Form VTR-216",                          type: "checkbox" },
 //
-  { id: "vehicleLocation",          label: "29. Vehicle Location Address if different...",     type: "text" },
+  { id: "vehicleLocation",          label: "29. Vehicle Location Address if different",     type: "text" },
+  { id: "vehicleLocationCity",          label: "Vehicle Location City",     type: "text" },
+  { id: "vehicleLocationState",          label: "Vehicle Location State",     type: "text" },
+  { id: "vehicleLocationZip",          label: "Vehicle Location Zip",     type: "text" },
 //
   { id: "attachVTR267",             label: "Yes Attach Form VTR-267",                          type: "checkbox" },
   { id: "noElectronicTitle",        label: "Yes Cannot check 30",                              type: "checkbox" },
   { id: "lienholderId",             label: "32. Certified/eTitle Lienholder ID Number",        type: "text" },
   { id: "firstLienDate",            label: "33. First Lien Date (if any)",                     type: "text" },
 //
-  { id: "lienholderNameAddress",    label: "34. First Lienholder Name and Mailing Address",     type: "text" },
+  { id: "lienholderNameAddress",    label: "34. First Lienholder Name",     type: "text" },
+  { id: "lienholderMailingAddress",    label: "First Lienholder Mailing Address",     type: "text" },
+  { id: "lienholderCity",    label: "First Lienholder City",     type: "text" },
+  { id: "lienholderState",    label: "First Lienholder State",     type: "text" },
+  { id: "lienholderZip",    label: "First Lienholder Zip",     type: "text" },
 //
   { id: "rentalPermit",             label: "I Hold Motor Vehicle Retailer (Rental) Permit Number", type: "checkbox" },
   { id: "permitNumber",             label: "Permit Number",                                    type: "text" },
@@ -109,7 +134,9 @@ const fields: FieldDef[] = [
 //
   { id: "gdnOrLessorNumber",        label: "GDN or Lessor Number",                             type: "text" },
   { id: "tradeIn",                  label: "Trade-in (if any)",                                type: "checkbox" },
-  { id: "tradeInDetails",           label: "36. Trade-In if any Year Make VIN",                type: "text" },
+  { id: "tradeInYear",           label: "Trade-In Year",                type: "text" },
+  { id: "tradeInMake",           label: "Trade-In Make",                type: "text" },
+  { id: "tradeInVin",           label: "Trade-In Vehicle Identification Number",                type: "text" },
   { id: "additionalTradeIns",       label: "Additional Trade-ins",                             type: "checkbox" },
 //
   { id: "salesAndUseTax",           label: "Sales and Use Tax",                                type: "checkbox" },
@@ -135,10 +162,12 @@ const fields: FieldDef[] = [
   { id: "emissionsFee1",            label: "1% Emissions Fee",                                 type: "text" },
   { id: "emissionsFee1Diesel",      label: "1% Emissions Fee Diesel Vehicles 1997...",         type: "checkbox" },
   { id: "taxExemptionReason",       label: "Sales Tax Exemption Reason",                       type: "text" },
+  { id: "taxExemption",           label: "Exemption claimed under the Motor vehicle Sales and Use Tax Law because:",type: "checkbox" },
   { id: "applicationFee",           label: "$28 or $33 Application Fee for Texas Title",       type: "checkbox" },
+  
+  //
   { id: "inspectionVerified",       label: "Check if applicable I have physically inspected...", type: "checkbox" },
   { id: "unrecoveredStolen",        label: "The vehicle is unrecovered stolen...",             type: "checkbox" },
-  //
   { id: "correctedTitleLost",       label: "I certify I am applying for a corrected title...", type: "checkbox" },
   { id: "sellerName",               label: "Seller Name",                                      type: "text" },
   { id: "sellerDate",               label: "Date",                                             type: "text" },
