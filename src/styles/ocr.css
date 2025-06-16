@@ -1,0 +1,36 @@
+/* ---------------------------------------------------
+   src/app.css
+   Global resets & layout
+--------------------------------------------------- */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #f7fafc;   /* light grey page background */
+  font-family: "Times New Roman", serif;
+  color: #1a202c;        /* dark slate */
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+.main-container{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  background-color: #ffffff;
+}
+
+.page-container {
+  margin: 2rem;
+  align-items: center;
+}
+
+.heading {
+  font-size: 1.5em;
+}
+

@@ -165,13 +165,14 @@ const sections = [
 
 export default function Responsive130UForm({ onChange }: Responsive130UFormProps) {
   const [formState, setFormState] = useState<Record<string, string | boolean>>(
-    () => fields.reduce((acc, f) => {
-      acc[f.id] = f.type === "checkbox" ? false : "";
-      return acc;
-    }, {} as Record<string, string | boolean>)
+    () =>
+      fields.reduce((acc, f) => {
+        acc[f.id] = f.type === "checkbox" ? false : "";
+        return acc;
+      }, {} as Record<string, string | boolean>)
   );
 
-  // Whenever formState changes, notify parent via onChange
+  // Notify parent of every state change
   useEffect(() => {
     onChange?.(formState);
   }, [formState, onChange]);
@@ -183,6 +184,7 @@ export default function Responsive130UForm({ onChange }: Responsive130UFormProps
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Form submitted:", formState);
+    // TODO: hook into your backend or pdf-lib here
   };
 
   const renderField = (f: FieldDef) => {
@@ -197,29 +199,35 @@ export default function Responsive130UForm({ onChange }: Responsive130UFormProps
             className="mr-2"
           />
           <label htmlFor={f.id} className="text-sm">
-            {f.label}{f.required && <span className="text-red-500">*</span>}
+            {f.label}
+            {f.required && <span className="text-red-500">*</span>}
           </label>
         </div>
       );
+    } else {
+      return (
+        <div key={f.id} className="flex flex-col">
+          <label htmlFor={f.id} className="text-sm mb-1">
+            {f.label}
+            {f.required && <span className="text-red-500">*</span>}
+          </label>
+          <input
+            id={f.id}
+            type="text"
+            value={String(formState[f.id] || "")}
+            onChange={(e) => handleChange(f.id, e.target.value)}
+            className="w-full border rounded px-2 py-1 text-sm"
+          />
+        </div>
+      );
     }
-    return (
-      <div key={f.id} className="flex flex-col">
-        <label htmlFor={f.id} className="text-sm mb-1">
-          {f.label}{f.required && <span className="text-red-500">*</span>}
-        </label>
-        <input
-          id={f.id}
-          type="text"
-          value={String(formState[f.id] || "")}
-          onChange={(e) => handleChange(f.id, e.target.value)}
-          className="w-full border rounded px-2 py-1 text-sm"
-        />
-      </div>
-    );
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 p-4 bg-white rounded shadow">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-8 p-4 bg-white rounded shadow"
+    >
       {sections.map(({ title, from, to }) => (
         <section key={title}>
           <h2 className="text-lg font-semibold mb-4">{title}</h2>
