@@ -1,7 +1,8 @@
-// src/pages/responsive-form.tsx
+// src/pages/ResponsiveFormPage.tsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Responsive130UForm from "../components/Responsive130UForm";
+import "../styles/responsive-form.css";
 
 interface LocationState {
   ocr?: any;
@@ -11,51 +12,47 @@ interface LocationState {
 export default function ResponsiveFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  // Assert that location.state matches LocationState
   const { ocr, titleFile } = (location.state as LocationState) || {};
 
-  // If we somehow land here without both, kick back to "/"
+  // Redirect back home if we don't have the OCR + title file
   useEffect(() => {
     if (!ocr || !titleFile) {
       navigate("/", { replace: true });
     }
   }, [ocr, titleFile, navigate]);
 
-  // Holds the current form values
+  // Hold all the 130-U form field values here
   const [formState, setFormState] = useState<Record<string, any>>({});
 
-  // Called by <Responsive130UForm> whenever a field changes
   const handleFormChange = (state: Record<string, any>) => {
     setFormState(state);
   };
 
-  // Move on to the review/download step
   const handleNext = () => {
     navigate("/review-submit", {
-      state: {
-        ocr,
-        titleFile,
-        titleForm: formState,
-      },
+      state: { ocr, titleFile, titleForm: formState },
     });
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <h1 className="text-2xl font-semibold mb-6">
-        Step 3: Complete &amp; Review Title Form
-      </h1>
+    <div className="responsive-form-page">
+      <header className="responsive-form-header">
+        <h1 className="responsive-form-title">Step 3: Complete Title Form</h1>
+      </header>
 
-      <Responsive130UForm onChange={handleFormChange} />
+      <main className="responsive-form-body">
+        <Responsive130UForm onChange={handleFormChange} />
+      </main>
 
-      <div className="mt-6 text-center">
+      <footer className="responsive-form-footer">
         <button
+          className="responsive-form-next-btn"
           onClick={handleNext}
-          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          disabled={Object.keys(formState).length === 0}
         >
-          Next: Review &amp; Download
+          Next: Review & Download
         </button>
-      </div>
+      </footer>
     </div>
   );
 }
