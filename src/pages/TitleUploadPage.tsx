@@ -1,7 +1,8 @@
-// src/pages/TitleUploadPage.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import type { DragEvent, ChangeEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import "../styles/ocr.css";
+import "../styles/title.css";
+
 
 interface OcrData {
   name: string;
@@ -10,61 +11,112 @@ interface OcrData {
 }
 
 interface LocationState {
-  ocr?: OcrData;
+  ocr: OcrData | null;
 }
 
 export default function TitleUploadPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = (location.state as LocationState) ?? {};
-  const ocr = state.ocr;
+  const { ocr } = (location.state as LocationState) || { ocr: null };
 
-  // Redirect back if we have no OCR data
+  // If we landed here without getting OCR data at all, bounce back home
   useEffect(() => {
-    if (!ocr) navigate("/", { replace: true });
+    if (ocr === undefined) {
+      navigate("/", { replace: true });
+    }
   }, [ocr, navigate]);
+  if (ocr === undefined) return null;
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   const canContinue = Boolean(file);
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setFile(e.target.files?.[0] ?? null);
+  function handleFile(f: File | null) {
+    setError(null);
+    setFile(f);
+  }
+
+  function onFileChange(e: ChangeEvent<HTMLInputElement>) {
+    handleFile(e.target.files?.[0] ?? null);
+  }
+
+  function onDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    const dt = e.dataTransfer.files;
+    if (dt && dt[0]) handleFile(dt[0]);
+  }
+
+  function onDragOver(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
   }
 
   function handleNext() {
-    if (ocr && file) {
+    if (file) {
       navigate("/responsive-form", {
         state: { ocr, titleFile: file },
       });
     }
   }
 
-  if (!ocr) return null;
+  function handleSkip() {
+    navigate("/responsive-form", {
+      state: { ocr, titleFile: null },
+    });
+  }
 
   return (
     <div className="main-container">
       <div className="page-container">
         <h1 className="heading">Step 2: Upload Your Title Document</h1>
-
         <p className="description">
-          Hi <strong>{ocr.name}</strong>, please upload a clear photo or PDF of
-          your title.
+          {ocr
+            ? <>Hi <strong>{ocr.name}</strong>, please upload a clear photo or PDF of your title.</>
+            : <>Please upload a clear photo or PDF of your title.</>}
         </p>
 
+        {/* ─── Drag & Drop Box ─── */}
+        <div
+          className="dropzone"
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div className="dropzone-icon">📄</div>
+          <div className="dropzone-text">
+            <strong>Drag and drop your title here</strong>
+            <div>or click to browse</div>
+          </div>
+        </div>
+
         <input
+          ref={fileInputRef}
+          id="titleFile"
           type="file"
           accept="image/*,application/pdf"
-          onChange={handleFileChange}
+          onChange={onFileChange}
           className="file-input"
+          style={{ display: "none" }}
         />
 
-        <button
-          disabled={!canContinue}
-          onClick={handleNext}
-          className={`btn ${canContinue ? "primary" : "disabled"}`}
-        >
-          Next: Fill Title Form
-        </button>
+        <label htmlFor="titleFile" className="choose-button">
+          📁 Choose File
+        </label>
+        {error && <p className="status-text error">{error}</p>}
+
+        <div className="card-footer">
+          <button
+            className={`btn primary${!canContinue ? " disabled" : ""}`}
+            onClick={handleNext}
+            disabled={!canContinue}
+          >
+            Next: Fill Title Form →
+          </button>
+          <button type="button" className="btn skip" onClick={handleSkip}>
+            &gt; Skip for now
+          </button>
+        </div>
       </div>
     </div>
   );

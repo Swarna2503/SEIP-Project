@@ -1,6 +1,6 @@
-// src/pages/OCRPage.tsx
-import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import React, { useState, useRef } from "react";
+import type { DragEvent, ChangeEvent } from "react";
 import "../styles/ocr.css";
 
 interface OcrData {
@@ -11,6 +11,7 @@ interface OcrData {
 
 export default function OCRPage() {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
   const [ocrData, setOcrData] = useState<OcrData>({
@@ -21,29 +22,36 @@ export default function OCRPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const chosen = e.target.files?.[0] ?? null;
+  const handleFile = async (chosen: File | null) => {
+    if (!chosen) return;
     setFile(chosen);
     setError(null);
-
-    if (!chosen) return;
     setLoading(true);
 
-    try {
-      // simulate OCR delay
-      await new Promise((r) => setTimeout(r, 1500));
+    // simulate OCR
+    await new Promise((r) => setTimeout(r, 1500));
+    // dummy OCR result
+    setOcrData({
+      name: "Jane Doe",
+      dob: "1985-04-23",
+      dlNumber: "D12345678",
+    });
+    setLoading(false);
+  };
 
-      // dummy OCR data
-      setOcrData({
-        name: "Jane Doe",
-        dob: "1985-04-23",
-        dlNumber: "D12345678",
-      });
-    } catch {
-      setError("Failed to run OCR. Please try another file.");
-    } finally {
-      setLoading(false);
-    }
+  const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const chosen = e.target.files?.[0] ?? null;
+    handleFile(chosen);
+  };
+
+  const onDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const dt = e.dataTransfer.files;
+    if (dt && dt[0]) handleFile(dt[0]);
+  };
+
+  const onDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
   };
 
   const canContinue =
@@ -55,51 +63,96 @@ export default function OCRPage() {
     navigate("/upload-title", { state: { ocr: ocrData } });
   };
 
+  const handleSkip = () => {
+    navigate("/upload-title", { state: { ocr: null } });
+  };
+
   return (
     <div className="main-container">
       <div className="page-container">
-      <h1 className="heading">Step 1: Upload &amp; OCR Driver’s License</h1>
+        <h1 className="heading">Step 1: Upload & OCR Driver’s License</h1>
+        <p className="description">
+          Please upload a clear photo or PDF of your driver’s license, or skip to continue.
+        </p>
 
-      <p className="description">
-        Please upload a clear photo or PDF of your driver’s license.
-      </p>
+        <div
+          className="dropzone"
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div className="dropzone-icon">📄</div>
+          <div className="dropzone-text">
+            <strong>Drag and drop your file here</strong>
+            <div>or click to browse</div>
+          </div>
+        </div>
 
-      <input
-        type="file"
-        accept="image/*,application/pdf"
-        onChange={handleFileChange}
-        className="file-input"
-      />
+        <input
+          ref={fileInputRef}
+          id="file"
+          type="file"
+          accept="image/*,application/pdf"
+          onChange={onFileChange}
+          className="file-input"
+        />
 
-      {loading && (
-        <p className="status-text">Running OCR, please wait…</p>
-      )}
-      {error && (
-        <p className="status-text error">{error}</p>
-      )}
+        <label htmlFor="file" className="choose-button">
+          📁 Choose File
+        </label>
 
-      {!loading && ocrData.name && (
-        <div className="ocr-data">
+        {loading && <p className="status-text">Running OCR, please wait…</p>}
+        {error && <p className="status-text error">{error}</p>}
+
+        {!loading && ocrData.name && (
+          <div className="ocr-data">
+            <p>
+              <strong>Extracted Name:</strong> {ocrData.name}
+            </p>
+            <p>
+              <strong>Date of Birth:</strong> {ocrData.dob}
+            </p>
+            <p>
+              <strong>DL #:</strong> {ocrData.dlNumber}
+            </p>
+          </div>
+        )}
+
+        <div className="accepted-box">
+          <h4>Accepted File Types:</h4>
+          <ul>
+            <li>PDF documents (.pdf)</li>
+            <li>Image files (.jpg, .jpeg, .png)</li>
+            <li>Maximum file size: 10MB</li>
+          </ul>
+        </div>
+
+        <div className="skip-box">
+          <h4>Skip Upload:</h4>
           <p>
-            <strong>Extracted Name:</strong> {ocrData.name}
-          </p>
-          <p>
-            <strong>Date of Birth:</strong> {ocrData.dob}
-          </p>
-          <p>
-            <strong>DL #:</strong> {ocrData.dlNumber}
+            You can skip this step and upload your driver’s license later if
+            needed. However, having it ready will help speed up the
+            process.
           </p>
         </div>
-      )}
 
-      <button
-        disabled={!canContinue}
-        onClick={handleNext}
-        className={`btn ${canContinue ? "primary" : "disabled"}`}
-      >
-        Next: Upload Title Document
-      </button>
-    </div>
+        <div className="buttons">
+          <button
+            className="btn primary"
+            disabled={!canContinue}
+            onClick={handleNext}
+          >
+            Continue  →
+          </button>
+          <button
+            type="button"                
+            className="btn skip"
+            onClick={handleSkip}
+          >
+            &gt; Skip for now
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

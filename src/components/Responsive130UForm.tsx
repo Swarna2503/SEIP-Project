@@ -8,10 +8,16 @@ interface FieldDef {
   required?: boolean;
 }
 
-interface Responsive130UFormProps {
-  /** Callback invoked on every change with the full form state */
+export interface Responsive130UFormProps {
+  /** Called on every change with the full form state */
   onChange?: (state: Record<string, string | boolean>) => void;
+  /** CSS class to apply to each section wrapper */
+  sectionClass?: string;
+  /** CSS class to apply to each section’s inner grid container */
+  gridClass?: string;
 }
+
+
 
 
 const fields: FieldDef[] = [
@@ -192,7 +198,12 @@ const sections = [
   { title: "Certify & Sign",          from: 89,  to: 97  },
 ];
 
-export default function Responsive130UForm({ onChange }: Responsive130UFormProps) {
+export default function Responsive130UForm({
+  onChange,
+  sectionClass = "",
+  gridClass = "",
+}: Responsive130UFormProps) {
+  // Initialize form state from your fields array
   const [formState, setFormState] = useState<Record<string, string | boolean>>(
     () =>
       fields.reduce((acc, f) => {
@@ -201,79 +212,66 @@ export default function Responsive130UForm({ onChange }: Responsive130UFormProps
       }, {} as Record<string, string | boolean>)
   );
 
-  // Notify parent of every state change
+  // Notify parent on every change
   useEffect(() => {
     onChange?.(formState);
   }, [formState, onChange]);
 
+  // Handle individual field updates
   const handleChange = (id: string, value: string | boolean) => {
     setFormState((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Form submitted:", formState);
-    // TODO: hook into your backend or pdf-lib here
-  };
-
+  // Render a single field (text or checkbox)
   const renderField = (f: FieldDef) => {
     if (f.type === "checkbox") {
       return (
-        <div key={f.id} className="flex items-center">
+        <div key={f.id} className="form-field checkbox">
           <input
             id={f.id}
             type="checkbox"
             checked={Boolean(formState[f.id])}
             onChange={(e) => handleChange(f.id, e.target.checked)}
-            className="mr-2"
+            className="form-checkbox"
           />
-          <label htmlFor={f.id} className="text-sm">
+          <label htmlFor={f.id} className="form-label">
             {f.label}
             {f.required && <span className="text-red-500">*</span>}
           </label>
-        </div>
-      );
-    } else {
-      return (
-        <div key={f.id} className="flex flex-col">
-          <label htmlFor={f.id} className="text-sm mb-1">
-            {f.label}
-            {f.required && <span className="text-red-500">*</span>}
-          </label>
-          <input
-            id={f.id}
-            type="text"
-            value={String(formState[f.id] || "")}
-            onChange={(e) => handleChange(f.id, e.target.value)}
-            className="w-full border rounded px-2 py-1 text-sm"
-          />
         </div>
       );
     }
+
+    return (
+      <div key={f.id} className="form-field">
+        <label htmlFor={f.id} className="form-label">
+          {f.label}
+          {f.required && <span className="text-red-500">*</span>}
+        </label>
+        <input
+          id={f.id}
+          type="text"
+          value={String(formState[f.id] || "")}
+          onChange={(e) => handleChange(f.id, e.target.value)}
+          className="form-input"
+        />
+      </div>
+    );
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-8 p-4 bg-white rounded shadow"
-    >
+    <>
       {sections.map(({ title, from, to }) => (
-        <section key={title}>
-          <h2 className="text-lg font-semibold mb-4">{title}</h2>
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <section key={title} className={sectionClass}>
+          <div className="section-header">
+            <h2 className="section-title">{title}</h2>
+            <hr />
+          </div>
+          <div className={gridClass}>
             {fields.slice(from, to + 1).map(renderField)}
           </div>
         </section>
       ))}
-
-      <div className="text-center">
-        <button
-          type="submit"
-          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Submit
-        </button>
-      </div>
-    </form>
+    </>
   );
 }

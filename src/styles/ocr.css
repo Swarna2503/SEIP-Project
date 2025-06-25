@@ -1,36 +1,206 @@
-/* ---------------------------------------------------
-   src/app.css
-   Global resets & layout
---------------------------------------------------- */
-html, body {
+/* ─────────────────────────────────────────────────────────────
+   RESET + BASE
+───────────────────────────────────────────────────────────── */
+body, html {
   margin: 0;
   padding: 0;
-  width: 100%;
-  height: 100%;
-  background: #f7fafc;   /* light grey page background */
-  font-family: "Times New Roman", serif;
-  color: #1a202c;        /* dark slate */
+  font-family: system-ui, sans-serif;
+  color: #1a202c;
 }
 
-#root {
-  width: 100%;
-  height: 100%;
-}
-
-.main-container{
-  width: 100%;
-  height: 100%;
+/* ─────────────────────────────────────────────────────────────
+   PAGE + CARD CONTAINERS
+───────────────────────────────────────────────────────────── */
+.main-container {
+  background: #f7fafc;
+  min-height: 100vh;
+  padding: 2rem 1rem;
   display: flex;
   justify-content: center;
-  background-color: #ffffff;
+  align-items: flex-start;
 }
-
 .page-container {
-  margin: 2rem;
-  align-items: center;
+  background: #ffffff;
+  width: 100%;
+  max-width: 720px;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  overflow: hidden;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   HEADER + DESCRIPTION
+───────────────────────────────────────────────────────────── */
 .heading {
-  font-size: 1.5em;
+  background: #ebf4ff;
+  padding: 1.5rem 1.5rem 1.25rem;
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #2d3748;
+  line-height: 1.2;
+}
+.description {
+  margin: 0;
+  padding: 1.5em;
+  color: #4a5568;
+  font-size: 1rem;
+  line-height: 1.4;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   DROPZONE
+───────────────────────────────────────────────────────────── */
+.dropzone {
+  margin: 0 1.5rem;
+  padding: 2.5rem 1rem;
+  border: 2px dashed #cbd5e0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #718096;
+  text-align: center;
+  cursor: pointer;
+}
+.dropzone-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+.dropzone-text strong {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+.dropzone-text div {
+  font-size: 0.9rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   HIDDEN FILE INPUT + STYLED LABEL
+───────────────────────────────────────────────────────────── */
+.file-input {
+  display: none;
+}
+.choose-button {
+  margin: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  color: #2d3748;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.choose-button:hover {
+  background: #edf2f7;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   OCR DATA + STATUS
+───────────────────────────────────────────────────────────── */
+.status-text {
+  margin: 0.5rem 1.5rem;
+  color: #4a5568;
+}
+.status-text.error {
+  color: #c53030;
+}
+.ocr-data {
+  margin: 0.5rem 1.5rem;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: #f7fafc;
+}
+.ocr-data p {
+  margin: 0.25rem 0;
+  font-size: 0.95rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   INFO BOXES
+───────────────────────────────────────────────────────────── */
+.accepted-box {
+  margin: 1rem 1.5rem;
+  padding: 1rem;
+  background: #ebf8ff;
+  border: 1px solid #bee3f8;
+  border-radius: 4px;
+}
+.accepted-box h4 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c5282;
+}
+.accepted-box ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #2c5282;
+  font-size: 0.9rem;
+}
+.accepted-box li {
+  margin-bottom: 0.25rem;
+}
+
+.skip-box {
+  margin: 0 1.5rem 1.5rem;
+  padding: 1rem;
+  background: #fffff0;
+  border: 1px solid #fbd38d;
+  border-radius: 4px;
+}
+.skip-box h4 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #975a16;
+}
+.skip-box p {
+  margin: 0;
+  color: #975a16;
+  font-size: 0.9rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BUTTON BAR
+───────────────────────────────────────────────────────────── */
+.buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem 1.5rem;
+}
+.btn {
+  font-size: 0.95rem;
+  border-radius: 4px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+}
+.btn.primary {
+  background: #3182ce;
+  color: #ffffff;
+  border: none;
+}
+.btn.primary:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+}
+.btn.skip {
+  background: transparent;
+  border: none;
+  color: #4a5568;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.95rem;
+}
+.btn.skip:hover {
+  text-decoration: underline;
+}

@@ -5,27 +5,27 @@ import Responsive130UForm from "../components/Responsive130UForm";
 import "../styles/responsive-form.css";
 
 interface LocationState {
-  ocr?: any;
-  titleFile?: File;
+  ocr?: any;        // may be null if user skipped OCR
+  titleFile?: File; // always set by the TITLE‐UPLOAD step
 }
 
 export default function ResponsiveFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { ocr, titleFile } = (location.state as LocationState) || {};
-
-  // Redirect back home if we don't have the OCR + title file
+  const state = location.state as LocationState | undefined;
+  const { ocr, titleFile } = state ?? {};
   useEffect(() => {
-    if (!ocr || !titleFile) {
-      navigate("/", { replace: true });
-    }
-  }, [ocr, titleFile, navigate]);
+  if (!state) {
+     // no state at all => somebody hit this URL directly
+     navigate("/", { replace: true });
+   }
+ }, [state, navigate]);
+  // ─────────────────────────────────────────────────────────
 
-  // Hold all the 130-U form field values here
   const [formState, setFormState] = useState<Record<string, any>>({});
 
-  const handleFormChange = (state: Record<string, any>) => {
-    setFormState(state);
+  const handleFormChange = (newState: Record<string, any>) => {
+    setFormState(newState);
   };
 
   const handleNext = () => {
@@ -36,23 +36,24 @@ export default function ResponsiveFormPage() {
 
   return (
     <div className="responsive-form-page">
-      <header className="responsive-form-header">
-        <h1 className="responsive-form-title">Step 3: Complete Title Form</h1>
-      </header>
+      <h1 className="page-title">Step 3: Complete Title Form</h1>
 
-      <main className="responsive-form-body">
-        <Responsive130UForm onChange={handleFormChange} />
-      </main>
+      <div className="form-card">
+        <div className="sections-container">
+          <Responsive130UForm
+            onChange={handleFormChange}
+            /* our CSS hooks */
+            sectionClass="section-card"
+            gridClass="fields-grid"
+          />
+        </div>
+      </div>
 
-      <footer className="responsive-form-footer">
-        <button
-          className="responsive-form-next-btn"
-          onClick={handleNext}
-          disabled={Object.keys(formState).length === 0}
-        >
-          Next: Review & Download
+      <div className="form-footer">
+        <button className="btn-next" onClick={handleNext}>
+          Next: Review &amp; Submit →
         </button>
-      </footer>
+      </div>
     </div>
   );
 }

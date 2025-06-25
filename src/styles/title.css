@@ -1,0 +1,15 @@
+.btn.skip {
+    background: transparent;
+    color: #4a5568;
+    font-weight: 500;
+    margin-left: 1rem;
+    border: none;
+  }
+  
+  .btn.skip:hover {
+    text-decoration: underline;
+  }
+  
+.card-footer {
+    margin: 0 0 1.5em 2em;
+}

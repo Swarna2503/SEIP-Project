@@ -45,11 +45,11 @@ export default function HomePage() {
         <div className="container">
           {/* 2) Required Forms */}
           <section className="section">
-            <div className="section-header">
+            <div className="section-header-ocr">
               <span className="icon">📄</span>
               <h2>Required Forms</h2>
             </div>
-            <div className="form-card">
+            <div className="form-card-ocr">
               <div className="form-card-content">
                 <span className="status-icon">⚠️</span>
                 <div>
