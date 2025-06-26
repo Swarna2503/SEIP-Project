@@ -1,26 +1,33 @@
+// src/pages/login.tsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/auth";
 import "../styles/login.css";
 
 export default function LoginPage() {
-  const navigate = useNavigate();
+  const { login, loading, error } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+
   const canContinue = email.trim() !== "" && password.trim() !== "";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: call your auth API here...
-    // on success:
-    sessionStorage.setItem("userEmail", email);
-    navigate("/");
+    console.log("email:", email, "password:", password);
+    try {
+      await login(email, password);
+    } catch {
+      // error was already handled in the useAuth hook
+    }
   };
 
   return (
     <div className="login-page">
       <form className="login-card" onSubmit={handleSubmit}>
         <h2>Sign In</h2>
+        {/* show error message */}
+        {error && <p className="error-text">{error}</p>}
 
         <label htmlFor="email">Email Address</label>
         <input
@@ -30,6 +37,7 @@ export default function LoginPage() {
           autoComplete="username"
           placeholder="you@example.com"
           onChange={(e) => setEmail(e.target.value)}
+          disabled={loading} 
         />
 
         <label htmlFor="password">Password</label>
@@ -40,9 +48,10 @@ export default function LoginPage() {
           autoComplete="current-password"
           placeholder="••••••••"
           onChange={(e) => setPassword(e.target.value)}
+          disabled={loading} 
         />
 
-        <button type="submit" disabled={!canContinue}>
+        <button type="submit" disabled={!canContinue || loading}>
           Continue →
         </button>
       </form>

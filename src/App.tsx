@@ -1,34 +1,29 @@
 // src/App.tsx
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route} from "react-router-dom";
 import LoginPage from "./pages/login";
 import HomePage from "./pages/HomePage";
 import OCRPage from "./pages/OCRPage";
 import TitleUploadPage from "./pages/TitleUploadPage";
 import ResponsiveFormPage from "./pages/responsive-form";
 import ReviewSubmitPage from "./pages/ReviewSubmitPage";
+import PrivateRoute from "./components/privateroute";
+
 
 export default function App() {
-  const isLoggedIn = Boolean(sessionStorage.getItem("userEmail"));
+  // const isLoggedIn = Boolean(sessionStorage.getItem("userEmail"));
 
   return (
     <Routes>
       {/* public route */}
       <Route path="/login" element={<LoginPage />} />
 
-      {/* redirect all unknowns to login if not authenticated */}
-      {!isLoggedIn ? (
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      ) : (
-        <>
-          {/* authenticated routes */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/ocr" element={<OCRPage />} />
-          <Route path="/upload-title" element={<TitleUploadPage />} />
-          <Route path="/responsive-form" element={<ResponsiveFormPage />} />
-          <Route path="/review-submit" element={<ReviewSubmitPage />} />
-        </>
-      )}
+      <Route path="/" element={<PrivateRoute> <HomePage /> </PrivateRoute>}/>
+      <Route path="/ocr" element={<PrivateRoute><OCRPage /></PrivateRoute>} />
+      <Route path="/upload-title" element={<PrivateRoute><TitleUploadPage /></PrivateRoute>} />
+      <Route path="/responsive-form" element={<PrivateRoute><ResponsiveFormPage /></PrivateRoute>} />
+      <Route path="/review-submit" element={<PrivateRoute><ReviewSubmitPage /></PrivateRoute>} />
+      
     </Routes>
   );
 }

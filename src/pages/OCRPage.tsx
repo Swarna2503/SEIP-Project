@@ -1,42 +1,62 @@
 import { useNavigate } from "react-router-dom";
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import type { DragEvent, ChangeEvent } from "react";
+import { postOCR } from "../apis/driver_license";
+import { useAuth } from "../hooks/auth";
 import "../styles/ocr.css";
 
+// change 
 interface OcrData {
   name: string;
-  dob: string;
+  address: string;
   dlNumber: string;
+  state: string;
 }
 
 export default function OCRPage() {
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // authentication hook to get user info
+  const { user } = useAuth();
+  console.log("current user:", user);
+  const userId = user?.user_id;
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [ocrData, setOcrData] = useState<OcrData>({
     name: "",
-    dob: "",
+    address: "",
     dlNumber: "",
+    state: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleFile = async (chosen: File | null) => {
     if (!chosen) return;
+    if (!userId) {
+      console.error("User ID is not available");
+      setError("User ID is not available. Please log in again.");
+      return;
+    }
     setFile(chosen);
     setError(null);
     setLoading(true);
 
-    // simulate OCR
-    await new Promise((r) => setTimeout(r, 1500));
-    // dummy OCR result
-    setOcrData({
-      name: "Jane Doe",
-      dob: "1985-04-23",
-      dlNumber: "D12345678",
-    });
-    setLoading(false);
+    try {
+      const data = await postOCR(chosen, userId);
+
+      setOcrData({
+        name: data.name,
+        address: data.address,
+        dlNumber: data.dlNumber,
+        state: data.state,
+      });
+    } catch (err: any) {
+      console.error("OCR failed:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -54,10 +74,13 @@ export default function OCRPage() {
     e.preventDefault();
   };
 
+  // Check if all required fields are filled
   const canContinue =
     Boolean(ocrData.name) &&
-    Boolean(ocrData.dob) &&
-    Boolean(ocrData.dlNumber);
+    Boolean(ocrData.address) &&
+    Boolean(ocrData.dlNumber) &&
+    Boolean(ocrData.state);
+
 
   const handleNext = () => {
     navigate("/upload-title", { state: { ocr: ocrData } });
@@ -110,10 +133,13 @@ export default function OCRPage() {
               <strong>Extracted Name:</strong> {ocrData.name}
             </p>
             <p>
-              <strong>Date of Birth:</strong> {ocrData.dob}
+              <strong>Address:</strong> {ocrData.address}
             </p>
             <p>
               <strong>DL #:</strong> {ocrData.dlNumber}
+            </p>
+            <p>
+              <strong>State:</strong> {ocrData.state}
             </p>
           </div>
         )}
@@ -130,7 +156,7 @@ export default function OCRPage() {
         <div className="skip-box">
           <h4>Skip Upload:</h4>
           <p>
-            You can skip this step and upload your driver’s license later if
+            You can skip this step and upload your driver's license later if
             needed. However, having it ready will help speed up the
             process.
           </p>
@@ -139,7 +165,7 @@ export default function OCRPage() {
         <div className="buttons">
           <button
             className="btn primary"
-            disabled={!canContinue}
+            disabled={!canContinue || loading}
             onClick={handleNext}
           >
             Continue  →
