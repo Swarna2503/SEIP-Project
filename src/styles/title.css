@@ -13,3 +13,25 @@
 .card-footer {
     margin: 0 0 1.5em 2em;
 }
+
+.ocr-preview {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 8px;      
+}
+
+.preview-heading {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.ocr-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.ocr-list li {
+  margin: 0.3rem 0;
+}
