@@ -15,10 +15,8 @@ export interface Responsive130UFormProps {
   sectionClass?: string;
   /** CSS class to apply to each section’s inner grid container */
   gridClass?: string;
+  initialValues?: Record<string, string | boolean>;
 }
-
-
-
 
 const fields: FieldDef[] = [
   // 0–3: “Applying for” checkboxes
@@ -202,15 +200,27 @@ export default function Responsive130UForm({
   onChange,
   sectionClass = "",
   gridClass = "",
+  initialValues = {},
 }: Responsive130UFormProps) {
   // Initialize form state from your fields array
+  // const [formState, setFormState] = useState<Record<string, string | boolean>>(
+  //   () =>
+  //     fields.reduce((acc, f) => {
+  //       acc[f.id] = f.type === "checkbox" ? false : "";
+  //       return acc;
+  //     }, {} as Record<string, string | boolean>)
+  // );
   const [formState, setFormState] = useState<Record<string, string | boolean>>(
     () =>
       fields.reduce((acc, f) => {
-        acc[f.id] = f.type === "checkbox" ? false : "";
+        // use OCR initial values if provided, otherwise default to empty string or false
+        acc[f.id] = f.id in (initialValues ?? {})
+          ? initialValues![f.id]
+          : f.type === "checkbox" ? false : "";
         return acc;
       }, {} as Record<string, string | boolean>)
   );
+
 
   // Notify parent on every change
   useEffect(() => {

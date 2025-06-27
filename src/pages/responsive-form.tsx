@@ -5,15 +5,41 @@ import Responsive130UForm from "../components/Responsive130UForm";
 import "../styles/responsive-form.css";
 
 interface LocationState {
-  ocr?: any;        // may be null if user skipped OCR
-  titleFile?: File; // always set by the TITLE‐UPLOAD step
+  ocr?: any;        // Driver License OCR, may be null if user skipped OCR
+  titleOcr?: any;   // Title Document OCR, may be null if user skipped OCR
+  titleFile?: File;
 }
 
 export default function ResponsiveFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as LocationState | undefined;
-  const { ocr, titleFile } = state ?? {};
+  const { ocr, titleOcr, titleFile } = state ?? {};
+  console.log("Driver License OCR:", ocr);
+  console.log("Title OCR:", titleOcr);
+
+  function mapOcrToFormValues(dl: any, title: any): Record<string, string> {
+    return {
+      vehicleIdentificationNumber: title?.vehicle_id_number ?? "",
+      vehicleYear: title?.year_model ?? "",
+      vehicleMake: title?.make_of_vehicle ?? "",
+      vehicleBodyStyle: title?.body_style ?? "",
+      vehicleModel: title?.model ?? "",
+      texasLicensePlate: title?.license_number ?? "",
+      odometerReading: title?.odometer_reading ?? "",
+      lienholderNameAddress: title?.first_lienholder ?? "",
+      previousOwner: title?.previous_owner ?? "",
+      applicantName: dl?.first_name ?? "",
+      applicantLastName: dl?.last_name ?? "",
+      applicantMailingAddress: dl?.address ?? "",
+      applicantState: dl?.state ?? "",
+      photoIdNumber: dl?.dlNumber ?? "",
+    };
+  }
+
+  const mappedOcr = mapOcrToFormValues(ocr ?? {}, titleOcr ?? {});
+
+
   useEffect(() => {
   if (!state) {
      // no state at all => somebody hit this URL directly
@@ -45,6 +71,7 @@ export default function ResponsiveFormPage() {
             /* our CSS hooks */
             sectionClass="section-card"
             gridClass="fields-grid"
+            initialValues={mappedOcr}
           />
         </div>
       </div>
