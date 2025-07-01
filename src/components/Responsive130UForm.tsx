@@ -97,7 +97,7 @@ const fields: FieldDef[] = [
 //
   { id: "previousOwner",            label: "20. Previous Owner Name ",        type: "text" },
   { id: "previousCity",            label: "Previous Owner City",        type: "text" },
-  { id: "previousState",            label: "Previous Owner State ",        type: "text" },
+  { id: "previousOwnerState",            label: "Previous Owner State ",        type: "text" },
   { id: "dealerGDN",                label: "21. Dealer GDN (if applicable)",                   type: "text" },
   { id: "unitNumber",               label: "22. Unit Number (if applicable)",                  type: "text" },
 //
@@ -157,7 +157,7 @@ const fields: FieldDef[] = [
   { id: "amountTaxesPaid",          label: "Amount of Taxes Paid to Previous State",           type: "text" },
   { id: "amountDue",                label: "Amount of Tax and Penalty Due",                    type: "text" },
   { id: "newResidentTax",           label: "$90 New Resident Tax",                             type: "checkbox" },
-  { id: "previousState",            label: "Resident's previous state",                        type: "text" },
+  { id: "previousResidentState",            label: "Resident's previous state",                        type: "text" },
   { id: "evenTradeTax",             label: "$5 Even Trade Tax",                                type: "checkbox" },
   { id: "giftTax",                  label: "$10 Gift Tax Attach Comptroller Form 14-317",      type: "checkbox" },
   { id: "salvageFee",               label: "$65 Rebuilt Salvage Fee",                          type: "checkbox" },

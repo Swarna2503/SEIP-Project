@@ -1,13 +1,13 @@
+// src/pages/TitleUploadPage.tsx
 import { useState, useRef } from "react";
 import type { DragEvent, ChangeEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { postTitleOCR } from "../apis/title";
 import { useAuth } from "../hooks/auth";
+import CameraCapture from "../components/CameraCapture";
 import "../styles/title.css";
 
-
-export interface titleOcrData {
-  // Title OCR
+export interface TitleOcrData {
   tx_dmv_number?: string;
   vehicle_id_number?: string;
   year_model?: string;
@@ -25,8 +25,6 @@ export interface titleOcrData {
   owner_remarks_2?: string;
   owner_remarks_3?: string;
   remarks?: string;
-
-  // Lien Information
   date_of_lien_1?: string;
   first_lienholder?: string;
   first_lien_released?: string;
@@ -41,102 +39,70 @@ export interface titleOcrData {
   by_authorized_agent_3?: string;
 }
 
-
 interface LocationState {
-  ocr: {
-    name: string;
-    address: string;
-    dlNumber: string;
-    state: string;
-  } | null;
+  ocr: { name: string } | null;
 }
 
 export default function TitleUploadPage() {
   const navigate = useNavigate();
-
   const { user } = useAuth();
-  console.log("current user:", user);
   const userId = user?.user_id;
 
-  const location = useLocation();
-  const { ocr } = (location.state as LocationState) || { ocr: null };
-
-  // // If we landed here without getting OCR data at all, bounce back home
-  // useEffect(() => {
-  //   if (ocr === undefined) {
-  //     navigate("/", { replace: true });
-  //   }
-  // }, [ocr, navigate]);
-  // if (ocr === undefined) return null;
+  const { ocr } = (useLocation().state as LocationState) || { ocr: null };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const [titleOcrData, setTitleOcrData] = useState<titleOcrData>({});
   const [loading, setLoading] = useState(false);
-  // const canContinue = Boolean(file);
+  const [titleOcrData, setTitleOcrData] = useState<TitleOcrData>({});
 
-  const handleFile = async (chosen: File | null) => {
+  // camera toggle
+  const [showCamera, setShowCamera] = useState(false);
+
+  const handleFile = async (chosen: File | Blob | null) => {
     if (!chosen) return;
     if (!userId) {
-      console.error("User ID is not available");
-      setError("User ID is not available. Please log in again.");
+      setError("User not logged in. Please log in again.");
       return;
     }
+    // if it's a Blob from camera, wrap in File
+    const pickedFile = chosen instanceof File
+      ? chosen
+      : new File([chosen], "capture.jpg", { type: "image/jpeg" });
 
-    setFile(chosen);
+    setFile(pickedFile);
     setError(null);
     setLoading(true);
 
     try {
-      const data = await postTitleOCR(chosen, userId);
-      console.log("OCR data received:", data);
+      const data = await postTitleOCR(pickedFile, userId);
       setTitleOcrData(data);
     } catch (err: any) {
-      console.error("Title OCR failed:", err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-
-  const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const chosen = e.target.files?.[0] ?? null;
-    handleFile(chosen);
-  };
+  const onFileChange = (e: ChangeEvent<HTMLInputElement>) =>
+    handleFile(e.target.files?.[0] ?? null);
 
   const onDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const dt = e.dataTransfer.files;
-    if (dt && dt[0]) handleFile(dt[0]);
+    handleFile(e.dataTransfer.files[0] ?? null);
   };
 
-  const onDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-  };
+  const onDragOver = (e: DragEvent<HTMLDivElement>) => e.preventDefault();
 
-  const handleNext = () => {
-    if (file) {
-      navigate("/responsive-form", {
-        state: { 
-          ocr, 
-          titleFile: file, 
-          titleOcr: titleOcrData },
-      });
-    }
-  };
-
-  const handleSkip = () => {
+  const handleNext = () =>
     navigate("/responsive-form", {
-      state: { 
-        ocr, 
-        titleFile: null,
-        titleOcr: null
-      },
+      state: { ocr, titleFile: file, titleOcr: titleOcrData },
     });
-  };
+
+  const handleSkip = () =>
+    navigate("/responsive-form", {
+      state: { ocr, titleFile: null, titleOcr: null },
+    });
 
   return (
     <div className="main-container">
@@ -148,7 +114,7 @@ export default function TitleUploadPage() {
             : <>Please upload a clear photo or PDF of your title.</>}
         </p>
 
-        {/* ─── Drag & Drop Box ─── */}
+        {/* drag & drop */}
         <div
           className="dropzone"
           onDrop={onDrop}
@@ -157,44 +123,51 @@ export default function TitleUploadPage() {
         >
           <div className="dropzone-icon">📄</div>
           <div className="dropzone-text">
-            <strong>
-              {file ? `Uploaded: ${file.name}` : "Drag and drop your title here"}
-            </strong>
+            <strong>{file ? `Uploaded: ${file.name}` : "Drag and drop your title here"}</strong>
             {!file && <div>or click to browse</div>}
           </div>
         </div>
 
         <input
           ref={fileInputRef}
-          id="titleFile"
           type="file"
           accept="image/*,application/pdf"
           onChange={onFileChange}
           className="file-input"
-          style={{ display: "none" }}
         />
 
-        <label htmlFor="titleFile" className="choose-button">
-          📁 Choose File
-        </label>
+        <div className="button-group">
+          <label
+            className="btn choose-button"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            📁 Choose File
+          </label>
+          <label
+            className="btn camera-button"
+            onClick={() => setShowCamera(true)}
+          >
+            📷 Take a Photo
+          </label>
+        </div>
+
+        {loading && <p className="status-text">OCR processing…</p>}
         {error && <p className="status-text error">{error}</p>}
-        {loading && <p className="status-text"> OCR processing...</p>}
 
         {!loading && Object.keys(titleOcrData).length > 0 && (
-        <div className="ocr-preview">
-          <h2 className="preview-heading">Extracted Title Information</h2>
-          <ul className="ocr-list">
-            {Object.entries(titleOcrData).map(([key, value]) => (
-              value && (
-                <li key={key}>
-                  <strong>{key.replace(/_/g, " ")}:</strong> {value}
-                </li>
-              )
-            ))}
-          </ul>
-        </div>
-      )}
-
+          <div className="ocr-preview">
+            <h2 className="preview-heading">Extracted Title Information</h2>
+            <ul className="ocr-list">
+              {Object.entries(titleOcrData).map(([k,v]) =>
+                v ? (
+                  <li key={k}>
+                    <strong>{k.replace(/_/g," ")}</strong>: {v}
+                  </li>
+                ) : null
+              )}
+            </ul>
+          </div>
+        )}
 
         <div className="card-footer">
           <button
@@ -204,10 +177,17 @@ export default function TitleUploadPage() {
           >
             Next: Fill Title Form →
           </button>
-          <button type="button" className="btn skip" onClick={handleSkip}>
+          <button className="btn skip" onClick={handleSkip}>
             &gt; Skip for now
           </button>
         </div>
+
+        {showCamera && (
+          <CameraCapture
+            onCapture={(blob) => handleFile(blob)}
+            onClose={() => setShowCamera(false)}
+          />
+        )}
       </div>
     </div>
   );
