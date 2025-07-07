@@ -1,0 +1,43 @@
+/* src/styles/review-submit.css */
+
+.review-submit-page {
+    padding: 2rem 1rem;
+    max-width: 960px;
+    margin: 0 auto;
+    font-family: system-ui, sans-serif;
+    color: #1a202c;
+  }
+  
+  .review-submit-page h1 {
+    font-size: 1.875rem;
+    margin-bottom: 1rem;
+  }
+  
+  .button-row {
+    margin: 1rem 0;
+    display: flex;
+    gap: 12px;
+  }
+  
+  .sig-canvas {
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+  }
+  
+  .sig-buttons {
+    margin: 0.5rem 0;
+    display: flex;
+    gap: 8px;
+  }
+  
+  .sig-preview img {
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+    max-width: 100%;
+  }
+  
+  .error {
+    color: #c53030;
+  }
+  

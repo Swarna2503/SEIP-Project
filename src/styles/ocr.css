@@ -9,6 +9,14 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+ul::marker,
+li::marker {
+  content: '';
+  display: none;
+}
+
+
+
 .main-container::before {
   content: '';
   position: absolute;
