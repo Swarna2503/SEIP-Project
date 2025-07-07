@@ -88,7 +88,7 @@ const fields: FieldDef[] = [
   { id: "additionalApplicantLastName",      label: " Applicant Last Name",       type: "text" },
   { id: "additionalApplicantSuffix",            label: "16. Applicant Suffix",       type: "text" },
 
-//
+// 18
   { id: "applicantMailingAddress",         label: "18. Applicant Mailing Address",     type: "text" },
   { id: "applicantCity",         label: " Applicant City",     type: "text" },
   { id: "applicantState",         label: "Applicant State",     type: "text" },

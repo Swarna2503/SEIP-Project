@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { DragEvent, ChangeEvent } from "react";
-import { postOCR } from "../apis/driver_license";
+import { postOCR, getLatestOCR } from "../apis/driver_license";
 import { useAuth } from "../hooks/auth";
 import "../styles/ocr.css";
 
@@ -11,7 +11,11 @@ interface OcrData {
   address: string;
   dlNumber: string;
   state: string;
+  city?: string; // new added optional fields
+  street_address?: string; // new added optional field
+  zip_code?: string;       // new added optional field
 }
+
 
 export default function OCRPage() {
   const navigate = useNavigate();
@@ -27,7 +31,35 @@ export default function OCRPage() {
     address: "",
     dlNumber: "",
     state: "",
+    street_address: "", // new added optional field
+    zip_code: "",       // new added optional field
+    city: "",           // new added optional field
   });
+  
+  useEffect(() => {
+    const fetchLatest = async () => {
+      if (!userId) return;
+      try {
+        const data = await getLatestOCR(userId);
+        if (data && data.dlNumber) {
+          setOcrData({
+            name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
+            address: data.address,
+            dlNumber: data.dlNumber,
+            state: data.state,
+            street_address: data.street_address,
+            zip_code: data.zip_code,
+            city: data.city,
+          });
+        }
+      } catch (err) {
+        console.warn("No previous OCR found or fetch failed.");
+      }
+    };
+
+    fetchLatest();
+  }, [userId]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,10 +78,13 @@ export default function OCRPage() {
       const data = await postOCR(chosen, userId);
 
       setOcrData({
-        name: data.name,
+        name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
         address: data.address,
         dlNumber: data.dlNumber,
         state: data.state,
+        street_address: data.street_address,
+        zip_code: data.zip_code,
+        city: data.city,
       });
     } catch (err: any) {
       console.error("OCR failed:", err);
@@ -79,8 +114,10 @@ export default function OCRPage() {
     Boolean(ocrData.name) &&
     Boolean(ocrData.address) &&
     Boolean(ocrData.dlNumber) &&
-    Boolean(ocrData.state);
-
+    Boolean(ocrData.state) &&
+    Boolean(ocrData.street_address) &&
+    Boolean(ocrData.zip_code) &&
+    Boolean(ocrData.city);
 
   const handleNext = () => {
     navigate("/upload-title", { state: { ocr: ocrData } });
@@ -130,16 +167,25 @@ export default function OCRPage() {
         {!loading && ocrData.name && (
           <div className="ocr-data">
             <p>
-              <strong>Extracted Name:</strong> {ocrData.name}
+              <strong>Extracted Name:</strong> {ocrData.name || "N/A"}
             </p>
             <p>
-              <strong>Address:</strong> {ocrData.address}
+              <strong>Address:</strong> {ocrData.address || "N/A"}
             </p>
             <p>
-              <strong>DL #:</strong> {ocrData.dlNumber}
+              <strong>DL #:</strong> {ocrData.dlNumber || "N/A"}
             </p>
             <p>
-              <strong>State:</strong> {ocrData.state}
+              <strong>State:</strong> {ocrData.state || "N/A"}
+            </p>
+            <p>
+              <strong>City:</strong> {ocrData.city || "N/A"}
+            </p>
+            <p>
+              <strong>Street Address:</strong> {ocrData.street_address || "N/A"}
+            </p>
+            <p>
+              <strong>ZIP Code:</strong> {ocrData.zip_code || "N/A"}
             </p>
           </div>
         )}
