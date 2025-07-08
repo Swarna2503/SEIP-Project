@@ -1,5 +1,15 @@
 // src/utils/pdfUtils.ts
-import { PDFDocument, PDFCheckBox, PDFTextField, rgb } from "pdf-lib";
+import {
+  PDFDocument,
+  PDFCheckBox,
+  PDFTextField,
+  StandardFonts,
+  rgb,
+  PDFField,
+  PDFDropdown,
+  PDFOptionList,
+  PDFButton,
+} from "pdf-lib";
 
 export interface PdfSignature {
   key: string;
@@ -11,9 +21,74 @@ const SIGNATURE_POSITIONS: Record<
   { pageIndex: number; x: number; y: number; width: number; height: number }
 > = {
   SellerSignature:     { pageIndex: 0, x:  25, y:  690, width: 200, height:  15 },
-  OwnerSignature:      { pageIndex: 0, x:  25, y:  720, width: 200, height:  15 },
+  OwnerSignature:      { pageIndex: 0, x: 25, y:  720, width: 200, height:  15 },
   AdditionalSignature: { pageIndex: 0, x:  25, y:  747, width: 200, height:  15 },
 };
+
+// Helper function to safely get error message
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+// Enhanced field handler
+async function handleField(
+  form: any,
+  key: string,
+  value: any
+): Promise<void> {
+  try {
+    // Try to get field by name
+    const field = form.getField(key);
+    const fieldType = field.constructor.name;
+    console.log(`📊 Field ${key} is of type: ${fieldType}`);
+
+    // Handle all field types generically
+    if (fieldType.includes('CheckBox')) {
+      const shouldCheck = value === true || value === "true" || value === 1 || value === "1";
+      console.log(`🔘 Checkbox ${key}: shouldCheck = ${shouldCheck}`);
+      
+      if (shouldCheck) {
+        field.check();
+        console.log(`✅ Checked ${key}`);
+      } else {
+        field.uncheck();
+        console.log(`☑️ Unchecked ${key}`);
+      }
+    }
+    else if (fieldType.includes('TextField')) {
+      const textVal = String(value).slice(0, 1000);
+      field.setText(textVal);
+      console.log(`📝 Set text field ${key} to: "${textVal.slice(0, 50)}${textVal.length > 50 ? '...' : ''}"`);
+    }
+    else if (fieldType.includes('Dropdown') || fieldType.includes('OptionList')) {
+      try {
+        field.select(value);
+        console.log(`🔽 Set dropdown ${key} to: ${value}`);
+      } catch {
+        // Fallback to text if option doesn't exist
+        const textVal = String(value).slice(0, 1000);
+        field.setText(textVal);
+        console.log(`📝 Set dropdown (as text) ${key} to: "${textVal.slice(0, 50)}${textVal.length > 50 ? '...' : ''}"`);
+      }
+    }
+    else if (fieldType.includes('Button')) {
+      // Handle buttons if needed
+      console.log(`🔘 Button field ${key} detected - no action taken`);
+    }
+    else {
+      // Generic field value setting
+      try {
+        field.setText(String(value));
+        console.log(`ℹ️ Set generic field ${key} to: ${String(value).slice(0, 50)}`);
+      } catch (error) {
+        console.warn(`⚠️ Could not set value for field ${key} (${fieldType})`);
+      }
+    }
+  } catch (error) {
+    console.error(`❌ Error processing field ${key}: ${getErrorMessage(error)}`);
+  }
+}
 
 export async function fillAndFlattenPdf(
   templateBytes: Uint8Array,
@@ -21,102 +96,108 @@ export async function fillAndFlattenPdf(
   signatures: PdfSignature[]
 ): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.load(templateBytes);
-  const form   = pdfDoc.getForm();
+  const form = pdfDoc.getForm();
 
-  // Cache all fields for fallback lookups:
-  const allFields = form.getFields();
+  // Debug: Log all form fields
+  const allFields = form.getFields().map(f => ({ 
+    name: f.getName(), 
+    type: f.constructor.name
+  }));
+  console.log("📋 All form fields:", allFields);
 
-  // Generic getter by name (exact or case-insensitive partial)
-  function getFieldByName(name: string) {
-    try {
-      return form.getField(name);
-    } catch {
-      const lower = name.toLowerCase();
-      return allFields.find((f) => {
-        const n = f.getName().toLowerCase();
-        return n === lower || n.includes(lower);
-      });
-    }
-  }
-
-  // 1) Fill every non-signature entry
+  // 1) Fill all form fields using enhanced handler
   for (const [key, val] of Object.entries(formData)) {
-    if (val == null || signatures.some((s) => s.key === key)) continue;
-
-    const field = getFieldByName(key);
-    if (!field) {
-      console.warn(`❌ No PDF field matched for "${key}"`);
+    if (val == null) {
+      console.log(`🚫 Skipping null value for key: ${key}`);
       continue;
     }
 
-    // Checkbox?
-    if (field instanceof PDFCheckBox) {
-      const checked =
-        val === true ||
-        val === "true" ||
-        val === "1";
-      try {
-        if (checked) field.check();
-        else        field.uncheck();
-      } catch (e) {
-        console.warn(`⚠️ Couldn’t (un)check "${key}":`, e);
-      }
-      continue;
-    }
-
-    // Text?
-    if (field instanceof PDFTextField) {
-      try {
-        field.setText(String(val).slice(0, 1000));
-      } catch (e) {
-        console.warn(`⚠️ Couldn’t set text "${key}":`, e);
-      }
-      continue;
-    }
-
-    console.warn(`⚠️ Field "${key}" is neither checkbox nor text (is ${field.constructor.name})`);
+    console.log(`🔍 Processing field: ${key} = ${val} (type: ${typeof val})`);
+    await handleField(form, key, val);
   }
 
-  // 2) Embed each signature image
+  // 2) Update appearances to ensure fields are visible
+  try {
+    console.log("🎨 Updating field appearances...");
+    const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    form.updateFieldAppearances(helvetica);
+    console.log("✅ Field appearances updated");
+  } catch (error) {
+    console.error("❌ Failed to update field appearances:", getErrorMessage(error));
+  }
+
+  // 3) Remove signature fields to prevent overlap
+  console.log("🗑️ Removing signature form fields...");
+  signatures.forEach(({ key }) => {
+    try {
+      const field = form.getField(key);
+      form.removeField(field);
+      console.log(`✅ Removed signature field: ${key}`);
+    } catch (error) {
+      console.warn(`⚠️ Could not remove signature field ${key}: ${getErrorMessage(error)}`);
+    }
+  });
+
+  // 4) Draw signatures as page content
   for (const { key, dataUrl } of signatures) {
-    if (!dataUrl || dataUrl === "data:,") continue;
+    if (!dataUrl || dataUrl === "data:,") {
+      console.log(`🚫 Empty signature for ${key}, skipping`);
+      continue;
+    }
+    
     const pos = SIGNATURE_POSITIONS[key];
     if (!pos) {
-      console.warn(`❌ No position for signature "${key}"`);
+      console.warn(`⚠️ No signature position for "${key}"`);
       continue;
     }
 
-    const page       = pdfDoc.getPage(pos.pageIndex);
-    const H          = page.getHeight();
-    const drawY      = H - pos.y - pos.height; // flip Y-axis
+    try {
+      console.log(`🖋️ Placing signature at ${key} position:`, pos);
+      const page = pdfDoc.getPage(pos.pageIndex);
+      const pageH = page.getHeight();
+      const y = pageH - pos.y - pos.height;
 
-    // debug box (optional)
-    page.drawRectangle({
-      x: pos.x, y: drawY,
-      width: pos.width, height: pos.height,
-      borderColor: rgb(1, 0, 0), borderWidth: 0.5,
-    });
+      // Process image
+      const base64 = dataUrl.split(",")[1]!;
+      const imgBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+      
+      let img;
+      try {
+        img = await pdfDoc.embedPng(imgBytes);
+        console.log(`🖼️ Embedded PNG signature`);
+      } catch {
+        try {
+          img = await pdfDoc.embedJpg(imgBytes);
+          console.log(`🖼️ Embedded JPG signature`);
+        } catch (error) {
+          console.error(`❌ Failed to embed signature image: ${getErrorMessage(error)}`);
+          continue;
+        }
+      }
 
-    // decode the image
-    const base64   = dataUrl.split(",")[1]!;
-    const bytes    = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-    let   img;
-    try { img = await pdfDoc.embedPng(bytes); }
-    catch { img = await pdfDoc.embedJpg(bytes); }
+      // Calculate dimensions
+      const ratio = img.width / img.height;
+      let w = pos.width;
+      let h = pos.height;
+      if (w / h > ratio) w = h * ratio;
+      else h = w / ratio;
 
-    // preserve aspect ratio
-    const ratio = img.width / img.height;
-    let   w     = pos.width;
-    let   h     = pos.height;
-    if (w / h > ratio) w = h * ratio;
-    else               h = w / ratio;
+      const x = pos.x + (pos.width - w) / 2;
+      const yy = y + (pos.height - h) / 2;
 
-    const x = pos.x + (pos.width  - w) / 2;
-    const y = drawY   + (pos.height - h) / 2;
-
-    page.drawImage(img, { x, y, width: w, height: h });
+      page.drawImage(img, { x, y: yy, width: w, height: h });
+      console.log(`✅ Signature placed for ${key}`);
+    } catch (error) {
+      console.error(`❌ Failed to place signature for ${key}: ${getErrorMessage(error)}`);
+    }
   }
 
-  form.flatten();
-  return pdfDoc.save();
+  // 5) Preserve form functionality by not flattening
+  console.log("ℹ️ Skipping form flattening to preserve editable fields");
+
+  console.log("💾 Saving PDF...");
+  const pdfBytes = await pdfDoc.save();
+  console.log(`✅ PDF saved successfully (${pdfBytes.length} bytes)`);
+  
+  return pdfBytes;
 }
