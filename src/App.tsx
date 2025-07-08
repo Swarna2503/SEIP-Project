@@ -1,14 +1,13 @@
-// src/App.tsx
 import React from "react";
-import { Routes, Route} from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import LoginPage from "./pages/login";
 import HomePage from "./pages/HomePage";
 import OCRPage from "./pages/OCRPage";
 import TitleUploadPage from "./pages/TitleUploadPage";
 import ResponsiveFormPage from "./pages/responsive-form";
 import ReviewSubmitPage from "./pages/ReviewSubmitPage";
+import PreviewPage from "./pages/PreviewPage";
 import PrivateRoute from "./components/privateroute";
-
 
 export default function App() {
   // const isLoggedIn = Boolean(sessionStorage.getItem("userEmail"));
@@ -18,12 +17,12 @@ export default function App() {
       {/* public route */}
       <Route path="/login" element={<LoginPage />} />
 
-      <Route path="/" element={<PrivateRoute> <HomePage /> </PrivateRoute>}/>
+      <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
       <Route path="/ocr" element={<PrivateRoute><OCRPage /></PrivateRoute>} />
       <Route path="/upload-title" element={<PrivateRoute><TitleUploadPage /></PrivateRoute>} />
       <Route path="/responsive-form" element={<PrivateRoute><ResponsiveFormPage /></PrivateRoute>} />
       <Route path="/review-submit" element={<PrivateRoute><ReviewSubmitPage /></PrivateRoute>} />
-      
+      <Route path="/preview" element={<PrivateRoute><PreviewPage /></PrivateRoute>} />
     </Routes>
   );
 }
