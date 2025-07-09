@@ -1,4 +1,3 @@
-// src/hooks/AuthContext.tsx
 import {
   createContext,
   useState,
@@ -11,7 +10,8 @@ import { login as loginApi } from "../apis/login";
 
 interface User {
   user_id: string;
-  email:   string;
+  email: string;
+  name?: string; // Add name for registration
 }
 
 interface AuthContextType {
@@ -19,6 +19,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<void>; // Add register function
   logout: () => void;
 }
 
@@ -30,8 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError]     = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // change to fetch user profile
+  // Check for existing session or local user
   useEffect(() => {
+    // First try to get backend session
     fetch("http://127.0.0.1:8000/profile", {
       credentials: "include",
     })
@@ -43,12 +45,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(data);
       })
       .catch(() => {
-        // if you want to jump to login page when first load, can call navigate("/login")
+        // If backend session fails, check localStorage for simulated user
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
       })
       .finally(() => setLoading(false));
   }, [navigate]);
 
-  // login method, call loginApi
+  // Login method
   async function login(email: string, password: string) {
     setLoading(true);
     setError(null);
@@ -65,14 +71,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Basic registration simulation
+  async function register(email: string, password: string, name: string) {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Create a simulated user object
+      const newUser: User = {
+        user_id: `simulated_${Math.random().toString(36).substr(2, 9)}`,
+        email,
+        name
+      };
+      
+      // Store in localStorage for persistence
+      localStorage.setItem('user', JSON.stringify(newUser));
+      
+      // Set user in context
+      setUser(newUser);
+      navigate("/", { replace: true });
+    } catch (err: any) {
+      setError(err.message || "Registration failed");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function logout() {
-    // optional: call backend /logout to clear session
+    // Clear both backend session and simulated user
+    localStorage.removeItem('user');
     setUser(null);
     navigate("/login", { replace: true });
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      error, 
+      login, 
+      register, // Add to provider
+      logout 
+    }}>
       {children}
     </AuthContext.Provider>
   );
