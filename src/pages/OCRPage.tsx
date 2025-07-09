@@ -1,3 +1,4 @@
+// src/pages/OCRPage.tsx
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import type { DragEvent, ChangeEvent } from "react";
@@ -5,7 +6,8 @@ import { postOCR, getLatestOCR } from "../apis/driver_license";
 import { useAuth } from "../hooks/auth";
 import "../styles/ocr.css";
 
-// change 
+import CameraCapture from "../components/CameraCapture"; // ← new import
+
 interface OcrData {
   name: string;
   address: string;
@@ -19,13 +21,10 @@ interface OcrData {
 
 export default function OCRPage() {
   const navigate = useNavigate();
-  // authentication hook to get user info
   const { user } = useAuth();
-  console.log("current user:", user);
   const userId = user?.user_id;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
   const [ocrData, setOcrData] = useState<OcrData>({
     name: "",
     address: "",
@@ -63,20 +62,40 @@ export default function OCRPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFile = async (chosen: File | null) => {
-    if (!chosen) return;
+  // new state to show/hide our camera overlay
+  const [showCamera, setShowCamera] = useState(false);
+
+  // unify File or Blob into a File
+  const handleFile = async (fileOrBlob: File | Blob | null) => {
+    if (!fileOrBlob) return;
     if (!userId) {
-      console.error("User ID is not available");
-      setError("User ID is not available. Please log in again.");
+      setError("User not logged in. Please log in again.");
       return;
     }
-    setFile(chosen);
     setError(null);
     setLoading(true);
 
-    try {
-      const data = await postOCR(chosen, userId);
+    // convert blob → File
+    let uploadFile: File;
+    if (fileOrBlob instanceof File) {
+      // already a File: keep its original name
+      uploadFile = fileOrBlob;
+    } else {
+      // pure Blob from camera: generate a unique filename
+      const ext = fileOrBlob.type.split("/")[1] ?? "jpg";
+      uploadFile = new File(
+        [fileOrBlob],
+        `capture-${Date.now()}.${ext}`,
+        { type: fileOrBlob.type }
+      );
+    }
+    // const file =
+    //   fileOrBlob instanceof Blob
+    //     ? new File([fileOrBlob], "capture.jpg", { type: fileOrBlob.type })
+    //     : fileOrBlob;
 
+    try {
+      const data = await postOCR(uploadFile, userId);
       setOcrData({
         name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
         address: data.address,
@@ -87,29 +106,22 @@ export default function OCRPage() {
         city: data.city,
       });
     } catch (err: any) {
-      console.error("OCR failed:", err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const chosen = e.target.files?.[0] ?? null;
-    handleFile(chosen);
-  };
+  const onFileChange = (e: ChangeEvent<HTMLInputElement>) =>
+    handleFile(e.target.files?.[0] ?? null);
 
   const onDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const dt = e.dataTransfer.files;
-    if (dt && dt[0]) handleFile(dt[0]);
+    handleFile(e.dataTransfer.files[0] ?? null);
   };
 
-  const onDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-  };
+  const onDragOver = (e: DragEvent<HTMLDivElement>) => e.preventDefault();
 
-  // Check if all required fields are filled
   const canContinue =
     Boolean(ocrData.name) &&
     Boolean(ocrData.address) &&
@@ -132,7 +144,8 @@ export default function OCRPage() {
       <div className="page-container">
         <h1 className="heading">Step 1: Upload & OCR Driver’s License</h1>
         <p className="description">
-          Please upload a clear photo or PDF of your driver’s license, or skip to continue.
+          Please upload a clear photo or PDF of your driver’s license, or skip
+          to continue.
         </p>
 
         <div
@@ -148,18 +161,31 @@ export default function OCRPage() {
           </div>
         </div>
 
+        {/* hidden file input for disk uploads */}
         <input
           ref={fileInputRef}
-          id="file"
           type="file"
           accept="image/*,application/pdf"
           onChange={onFileChange}
           className="file-input"
         />
 
-        <label htmlFor="file" className="choose-button">
-          📁 Choose File
-        </label>
+        <div className="button-group">
+          <label
+            className="btn choose-button"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            📁 Choose File
+          </label>
+
+          {/* open our in-page camera overlay */}
+          <button
+            className="btn camera-button"
+            onClick={() => setShowCamera(true)}
+          >
+            📷 Take a Photo
+          </button>
+        </div>
 
         {loading && <p className="status-text">Running OCR, please wait…</p>}
         {error && <p className="status-text error">{error}</p>}
@@ -203,8 +229,7 @@ export default function OCRPage() {
           <h4>Skip Upload:</h4>
           <p>
             You can skip this step and upload your driver's license later if
-            needed. However, having it ready will help speed up the
-            process.
+            needed. However, having it ready will help speed up the process.
           </p>
         </div>
 
@@ -212,18 +237,27 @@ export default function OCRPage() {
           <button
             className="btn primary"
             disabled={!canContinue || loading}
-            onClick={handleNext}
+            onClick={() =>
+              navigate("/upload-title", { state: { ocr: ocrData } })
+            }
           >
-            Continue  →
+            Continue →
           </button>
           <button
-            type="button"                
+            type="button"
             className="btn skip"
-            onClick={handleSkip}
+            onClick={() => navigate("/upload-title", { state: { ocr: null } })}
           >
             &gt; Skip for now
           </button>
         </div>
+
+        {showCamera && (
+          <CameraCapture
+            onCapture={(blob) => handleFile(blob)}
+            onClose={() => setShowCamera(false)}
+          />
+        )}
       </div>
     </div>
   );

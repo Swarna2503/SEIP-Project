@@ -1,9 +1,10 @@
 // src/api/driver_license.ts
 import { apiBaseURL } from "./config";
 
-
 export async function getLatestOCR(userId: string) {
-  const response = await fetch(`/api/driverlicense/latest?user_id=${userId}`);
+  const response = await fetch(
+    `${apiBaseURL}/driverlicense/latest?user_id=${userId}`
+  );
   if (!response.ok) {
     throw new Error("Failed to fetch latest OCR record");
   }

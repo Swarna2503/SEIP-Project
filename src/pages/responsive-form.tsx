@@ -1,12 +1,11 @@
-// src/pages/ResponsiveFormPage.tsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Responsive130UForm from "../components/Responsive130UForm";
 import "../styles/responsive-form.css";
 
 interface LocationState {
-  ocr?: any;        // Driver License OCR, may be null if user skipped OCR
-  titleOcr?: any;   // Title Document OCR, may be null if user skipped OCR
+  ocr?: any;
+  titleOcr?: any;
   titleFile?: File;
 }
 
@@ -18,7 +17,7 @@ export default function ResponsiveFormPage() {
   console.log("Driver License OCR:", ocr);
   console.log("Title OCR:", titleOcr);
 
-  function mapOcrToFormValues(dl: any, title: any): Record<string, string> {
+  function mapOcrToFormValues(dl: any, title: any): Record<string, string | boolean> {
     return {
       vehicleIdentificationNumber: title?.vehicle_id_number ?? "",
       vehicleYear: title?.year_model ?? "",
@@ -29,6 +28,7 @@ export default function ResponsiveFormPage() {
       odometerReading: title?.odometer_reading ?? "",
       lienholderNameAddress: title?.first_lienholder ?? "",
       previousOwner: title?.previous_owner ?? "",
+
       applicantName: dl?.first_name ?? "",
       applicantLastName: dl?.last_name ?? "",
       // add new fields 
@@ -37,19 +37,62 @@ export default function ResponsiveFormPage() {
       applicantState: dl?.state ?? "",
       applicantZip: dl?.zip_code ?? "", 
       photoIdNumber: dl?.dlNumber ?? "",
+      // Initialize checkbox states
+      titleRegistration: false,
+      titleOnly: false,
+      registrationPurposesOnly: false,
+      nonTitleRegistration: false,
+      vehicleDescription: false,
+      addRemoveLien: false,
+      otherReason: false,
+      notActualMileage: false,
+      exceedsMechanicalLimits: false,
+      exemptMileage: false,
+      individual: false,
+      business: false,
+      government: false,
+      trust: false,
+      nonProfit: false,
+      usDriverLicense: false,
+      passport: false,
+      uscisId: false,
+      natoId: false,
+      usMilitaryId: false,
+      militaryStatusId: false,
+      usDeptStateId: false,
+      usDeptHomelandId: false,
+      emailConsent: false,
+      attachVTR216: false,
+      attachVTR267: false,
+      noElectronicTitle: false,
+      rentalPermit: false,
+      dealerOrLessor: false,
+      tradeIn: false,
+      additionalTradeIns: false,
+      salesAndUseTax: false,
+      penalty5Percent: false,
+      penalty10Percent: false,
+      newResidentTax: false,
+      evenTradeTax: false,
+      giftTax: false,
+      salvageFee: false,
+      emissionsFee25Diesel: false,
+      emissionsFee1Diesel: false,
+      taxExemption: false,
+      applicationFee: false,
+      inspectionVerified: false,
+      unrecoveredStolen: false,
+      correctedTitleLost: false,
     };
   }
 
   const mappedOcr = mapOcrToFormValues(ocr ?? {}, titleOcr ?? {});
 
-
   useEffect(() => {
-  if (!state) {
-     // no state at all => somebody hit this URL directly
-     navigate("/", { replace: true });
-   }
- }, [state, navigate]);
-  // ─────────────────────────────────────────────────────────
+    if (!state) {
+      navigate("/", { replace: true });
+    }
+  }, [state, navigate]);
 
   const [formState, setFormState] = useState<Record<string, any>>({});
 
@@ -59,7 +102,16 @@ export default function ResponsiveFormPage() {
 
   const handleNext = () => {
     navigate("/review-submit", {
-      state: { ocr, titleFile, titleForm: formState },
+      state: { 
+        ocr, 
+        titleFile, 
+        titleForm: formState,
+        signatures: {
+          SellerSignature: formState.SellerSignature,
+          OwnerSignature: formState.OwnerSignature,
+          AdditionalSignature: formState.AdditionalSignature
+        }
+      },
     });
   };
 
@@ -71,7 +123,6 @@ export default function ResponsiveFormPage() {
         <div className="sections-container">
           <Responsive130UForm
             onChange={handleFormChange}
-            /* our CSS hooks */
             sectionClass="section-card"
             gridClass="fields-grid"
             initialValues={mappedOcr}

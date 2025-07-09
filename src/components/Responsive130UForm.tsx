@@ -1,10 +1,11 @@
 // src/components/Responsive130UForm.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import SignatureCanvas from "react-signature-canvas";
 
 interface FieldDef {
   id: string;
   label: string;
-  type: "text" | "checkbox";
+  type: "text" | "checkbox" | "signature";
   required?: boolean;
 }
 
@@ -13,24 +14,25 @@ export interface Responsive130UFormProps {
   onChange?: (state: Record<string, string | boolean>) => void;
   /** CSS class to apply to each section wrapper */
   sectionClass?: string;
-  /** CSS class to apply to each section’s inner grid container */
+  /** CSS class to apply to each section's inner grid container */
   gridClass?: string;
   initialValues?: Record<string, string | boolean>;
 }
 
+// Updated fields array with signature type instead of image
 const fields: FieldDef[] = [
-  // 0–3: “Applying for” checkboxes
+  // 0–3: "Applying for" checkboxes
   { id: "titleRegistration",           label: "Title & Registration",                  type: "checkbox" },
   { id: "titleOnly",                   label: "Title Only",                              type: "checkbox" },
   { id: "registrationPurposesOnly",    label: "Registration Purposes Only",               type: "checkbox" },
   { id: "nonTitleRegistration",        label: "Nontitle Registration",                   type: "checkbox" },
 
-  // 4–6: “Corrected title or registration, check reason”
+  // 4–6: "Corrected title or registration, check reason"
   { id: "vehicleDescription",          label: "Vehicle Description",                     type: "checkbox" },
   { id: "addRemoveLien",               label: "Add/Remove Lien",                        type: "checkbox" },
   { id: "otherReason",                 label: "Other (specify below)",                  type: "checkbox" },
 
-  // 7: “Other reason” free-form
+  // 7: "Other reason" free-form
   { id: "otherReasonText",             label: "Other Reason For Correction",             type: "text" },
 
   // 8–14: Vehicle details
@@ -43,7 +45,6 @@ const fields: FieldDef[] = [
   { id: "minorColor",                  label: "7. Minor Color",                          type: "text" },
 
   //15-22
-
   { id: "texasLicensePlate",          label: "8. Texas License Plate No",                       type: "text" },
   { id: "odometerReading",            label: "9. Odometer Reading (no tenths)",                 type: "text" },
   { id: "notActualMileage",           label: "Not Actual",                                      type: "checkbox" },
@@ -53,7 +54,6 @@ const fields: FieldDef[] = [
   { id: "carryingCapacity",           label: "12. Carrying Capacity (if any)",                  type: "text" },
 
   //23-29
-
   { id: "individual",                 label: "Individual",                                      type: "checkbox" },
   { id: "business",                   label: "Business",                                        type: "checkbox" },
   { id: "government",                 label: "Government",                                      type: "checkbox" },
@@ -62,7 +62,6 @@ const fields: FieldDef[] = [
   { id: "photoIdNumber",             label: "14. Applicant Photo ID Number or FEIN/EIN",       type: "text" },
 
   //
-
   { id: "usDriverLicense",           label: "U.S. Driver License/ID Card",                     type: "checkbox" },
   { id: "stateOfId",                 label: "State of ID/DL",                                  type: "text" },
   { id: "passport",                  label: "Passport",                                        type: "checkbox" },
@@ -75,12 +74,10 @@ const fields: FieldDef[] = [
   { id: "usDeptHomelandId",         label: "US Dept of Homeland Security ID",                  type: "checkbox" },
 
 //
-
   { id: "applicantName",            label: "16. Applicant First Name or Entity Name...",       type: "text" },
   { id: "applicantMiddleName",      label: " Applicant Middle Name",       type: "text" },
   { id: "applicantLastName",      label: " Applicant Last Name",       type: "text" },
   { id: "applicantSuffix",            label: "16. Applicant Suffix",       type: "text" },
-
 
 //
   { id: "additionalApplicantName",  label: "17. Additional Applicant First Name...",           type: "text" },
@@ -97,14 +94,14 @@ const fields: FieldDef[] = [
 //
   { id: "previousOwner",            label: "20. Previous Owner Name ",        type: "text" },
   { id: "previousCity",            label: "Previous Owner City",        type: "text" },
-  { id: "previousState",            label: "Previous Owner State ",        type: "text" },
+  { id: "previousOwnerState",            label: "Previous Owner State ",        type: "text" },
   { id: "dealerGDN",                label: "21. Dealer GDN (if applicable)",                   type: "text" },
   { id: "unitNumber",               label: "22. Unit Number (if applicable)",                  type: "text" },
 //
   { id: "renewalRecipientFirstName",         label: "23. Renewal Recipient First Name", type: "text" },
-  { id: "renewalRecipientMiddleName",         label: "Renewal Recipient First Name", type: "text" },
-  { id: "renewalRecipientLastName",         label: "Renewal Recipient First Name", type: "text" },
-  { id: "renewalRecipientSuffix",         label: "Renewal Recipient First Name", type: "text" },
+  { id: "renewalRecipientMiddleName",         label: "Renewal Recipient Middle Name", type: "text" },
+  { id: "renewalRecipientLastName",         label: "Renewal Recipient Last Name", type: "text" },
+  { id: "renewalRecipientSuffix",         label: "Renewal Recipient Suffix", type: "text" },
 //
   { id: "renewalMailingAddress",           label: "24. Renewal Notice Mailing Address",            type: "text" },
   { id: "renewalCity",           label: "Renewal Notice City",            type: "text" },
@@ -157,7 +154,7 @@ const fields: FieldDef[] = [
   { id: "amountTaxesPaid",          label: "Amount of Taxes Paid to Previous State",           type: "text" },
   { id: "amountDue",                label: "Amount of Tax and Penalty Due",                    type: "text" },
   { id: "newResidentTax",           label: "$90 New Resident Tax",                             type: "checkbox" },
-  { id: "previousState",            label: "Resident's previous state",                        type: "text" },
+  { id: "previousResidentState",            label: "Resident's previous state",                        type: "text" },
   { id: "evenTradeTax",             label: "$5 Even Trade Tax",                                type: "checkbox" },
   { id: "giftTax",                  label: "$10 Gift Tax Attach Comptroller Form 14-317",      type: "checkbox" },
   { id: "salvageFee",               label: "$65 Rebuilt Salvage Fee",                          type: "checkbox" },
@@ -178,8 +175,11 @@ const fields: FieldDef[] = [
   { id: "applicantOwner",           label: "Applicant Owner",                                  type: "text" },
   { id: "applicantDate",            label: "Date_2",                                           type: "text" },
   { id: "additionalApplicant",      label: "Additional Applicant",                             type: "text" },
-  { id: "additionalApplicantDate",  label: "Date_3",                                           type: "text" }
-
+  { id: "additionalApplicantDate",  label: "Date_3",                                           type: "text" },
+  //
+  { id: "SellerSignature",  label: "Seller Signature",                                                  type: "signature" },
+  { id: "OwnerSignature",  label: "Owner Signature",                                                  type: "signature" },
+  { id: "AdditionalSignature",  label: "Additional Signature",                                                  type: "signature" }
 ];
 
 // Define sections by index ranges
@@ -196,31 +196,62 @@ const sections = [
   { title: "Certify & Sign",          from: 89,  to: 97  },
 ];
 
+type SigPad = InstanceType<typeof SignatureCanvas>;
+
 export default function Responsive130UForm({
   onChange,
   sectionClass = "",
   gridClass = "",
   initialValues = {},
 }: Responsive130UFormProps) {
-  // Initialize form state from your fields array
-  // const [formState, setFormState] = useState<Record<string, string | boolean>>(
-  //   () =>
-  //     fields.reduce((acc, f) => {
-  //       acc[f.id] = f.type === "checkbox" ? false : "";
-  //       return acc;
-  //     }, {} as Record<string, string | boolean>)
-  // );
-  const [formState, setFormState] = useState<Record<string, string | boolean>>(
-    () =>
-      fields.reduce((acc, f) => {
-        // use OCR initial values if provided, otherwise default to empty string or false
-        acc[f.id] = f.id in (initialValues ?? {})
-          ? initialValues![f.id]
-          : f.type === "checkbox" ? false : "";
-        return acc;
-      }, {} as Record<string, string | boolean>)
-  );
+  // Initialize form state with proper boolean conversion
+  const [formState, setFormState] = useState<Record<string, string | boolean>>(() => {
+    const state: Record<string, string | boolean> = {};
+    fields.forEach(f => {
+      if (f.id in initialValues) {
+        // For checkboxes, convert string to boolean if necessary
+        if (f.type === "checkbox") {
+          const val = initialValues[f.id];
+          state[f.id] = typeof val === 'string' 
+            ? (val === 'true' || val === '1' || val === 'on')
+            : Boolean(val);
+        } else {
+          state[f.id] = initialValues[f.id];
+        }
+      } else {
+        state[f.id] = f.type === "checkbox" ? false : "";
+      }
+    });
+    return state;
+  });
 
+  // Refs for signature pads
+  const sellerSigRef = useRef<SigPad>(null);
+  const ownerSigRef = useRef<SigPad>(null);
+  const additionalSigRef = useRef<SigPad>(null);
+
+  // Get signature refs map
+  const getSigRef = (id: string) => {
+    switch (id) {
+      case "SellerSignature": return sellerSigRef;
+      case "OwnerSignature": return ownerSigRef;
+      case "AdditionalSignature": return additionalSigRef;
+      default: return null;
+    }
+  };
+
+  // Extract signature data
+  const getSignatureData = (id: string): string | null => {
+    const ref = getSigRef(id);
+    if (!ref?.current || ref.current.isEmpty()) return null;
+    return ref.current.getCanvas().toDataURL("image/png");
+  };
+
+  // Update form state with signature data when signatures change
+  const updateSignatureInState = (id: string) => {
+    const sigData = getSignatureData(id);
+    setFormState(prev => ({ ...prev, [id]: sigData || "" }));
+  };
 
   // Notify parent on every change
   useEffect(() => {
@@ -232,22 +263,59 @@ export default function Responsive130UForm({
     setFormState((prev) => ({ ...prev, [id]: value }));
   };
 
-  // Render a single field (text or checkbox)
+  // Render a single field
   const renderField = (f: FieldDef) => {
     if (f.type === "checkbox") {
       return (
-        <div key={f.id} className="form-field checkbox">
-          <input
-            id={f.id}
-            type="checkbox"
-            checked={Boolean(formState[f.id])}
-            onChange={(e) => handleChange(f.id, e.target.checked)}
-            className="form-checkbox"
-          />
-          <label htmlFor={f.id} className="form-label">
+        <div key={f.id} className="form-field">
+          <label className="checkbox-container">
+            <input
+              id={f.id}
+              type="checkbox"
+              checked={Boolean(formState[f.id])}
+              onChange={(e) => handleChange(f.id, e.target.checked)}
+              className="form-checkbox"
+            />
+            <span className="checkbox-label">
+              {f.label}
+              {f.required && <span className="text-red-500">*</span>}
+            </span>
+          </label>
+        </div>
+      );
+    }
+
+    if (f.type === "signature") {
+      const ref = getSigRef(f.id);
+      return (
+        <div key={f.id} className="form-field signature-field">
+          <label className="form-label">
             {f.label}
             {f.required && <span className="text-red-500">*</span>}
           </label>
+          <div className="signature-container">
+            <SignatureCanvas
+              ref={ref}
+              penColor="black"
+              canvasProps={{ 
+                width: 400, 
+                height: 100, 
+                className: "signature-canvas",
+                style: { border: "1px solid #ccc", borderRadius: "4px" }
+              }}
+              onEnd={() => updateSignatureInState(f.id)}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                ref?.current?.clear();
+                updateSignatureInState(f.id);
+              }}
+              className="clear-signature-btn"
+            >
+              Clear
+            </button>
+          </div>
         </div>
       );
     }
