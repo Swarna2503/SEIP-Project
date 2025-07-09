@@ -1,11 +1,13 @@
 // src/components/Responsive130UForm.tsx
 import React, { useState, useEffect, useRef } from "react";
 import SignatureCanvas from "react-signature-canvas";
+import { STATE_ABBREVIATIONS, STATE_NAMES } from '../utils/stateAbbreviations';
+
 
 interface FieldDef {
   id: string;
   label: string;
-  type: "text" | "checkbox" | "signature";
+  type: "text" | "checkbox" | "signature" | "dropdown";
   required?: boolean;
 }
 
@@ -18,6 +20,17 @@ export interface Responsive130UFormProps {
   gridClass?: string;
   initialValues?: Record<string, string | boolean>;
 }
+
+const STATE_FIELDS = new Set([
+  "applicantState",
+  "stateOfId",
+  "previousOwnerState",
+  "renewalState",
+  "vehicalLocationState",
+  "FirstLienholderState",
+  "taxPaidToState",
+  "residentPreviousState"
+]);
 
 // Updated fields array with signature type instead of image
 const fields: FieldDef[] = [
@@ -63,7 +76,7 @@ const fields: FieldDef[] = [
 
   //
   { id: "usDriverLicense",           label: "15.U.S. Driver License/ID Card",                     type: "checkbox" },
-  { id: "stateOfId",                 label: "15.State of ID/DL",                                  type: "text" },
+  { id: "stateOfId",                 label: "15.State of ID/DL",                                  type: "dropdown" },
   { id: "passport",                  label: "15.Passport",                                        type: "checkbox" },
   { id: "passportIssued",           label: "15.Passport Issued",                                  type: "text" },
   { id: "uscisId",                   label: "15.U.S. Citizenship & Immigration Services/DOJ ID",   type: "checkbox" },
@@ -88,13 +101,13 @@ const fields: FieldDef[] = [
 //
   { id: "applicantMailingAddress",         label: "18. Applicant Mailing Address",     type: "text" },
   { id: "applicantCity",         label: "18.Applicant City",     type: "text" },
-  { id: "applicantState",         label: "18.Applicant State",     type: "text" },
+  { id: "applicantState",         label: "18.Applicant State",     type: "dropdown" },
   { id: "applicantZip",         label: "18.Applicant Zip",     type: "text" },
   { id: "applicantCounty",          label: "19. Applicant County of Residence",                type: "text" },
 //
   { id: "previousOwner",            label: "20. Previous Owner Name ",        type: "text" },
   { id: "previousCity",            label: "20.Previous Owner City",        type: "text" },
-  { id: "previousOwnerState",            label: "20.Previous Owner State ",        type: "text" },
+  { id: "previousOwnerState",            label: "20.Previous Owner State ",        type: "dropdown" },
   { id: "dealerGDN",                label: "21. Dealer GDN (if applicable)",                   type: "text" },
   { id: "unitNumber",               label: "22. Unit Number (if applicable)",                  type: "text" },
 //
@@ -105,7 +118,7 @@ const fields: FieldDef[] = [
 //
   { id: "renewalMailingAddress",           label: "24. Renewal Notice Mailing Address",            type: "text" },
   { id: "renewalCity",           label: "24.Renewal Notice City",            type: "text" },
-  { id: "renewalState",           label: "24.Renewal Notice Mailing State",            type: "text" },
+  { id: "renewalState",           label: "24.Renewal Notice Mailing State",            type: "dropdown" },
   { id: "renewalZip",           label: "24.Renewal Notice Mailing Zip",            type: "text" },
 //
   { id: "phoneNumber",              label: "25. Applicant Phone Number (optional)",            type: "text" },
@@ -115,7 +128,7 @@ const fields: FieldDef[] = [
 //
   { id: "vehicleLocation",          label: "29.Vehicle Location Address if different",     type: "text" },
   { id: "vehicleLocationCity",          label: "29.Vehicle Location City",     type: "text" },
-  { id: "vehicleLocationState",          label: "29.Vehicle Location State",     type: "text" },
+  { id: "vehicalLocationState",          label: "29.Vehicle Location State",     type: "dropdown" },
   { id: "vehicleLocationZip",          label: "29.Vehicle Location Zip",     type: "text" },
 //
   { id: "attachVTR267",             label: "30.Yes Attach Form VTR-267",                          type: "checkbox" },
@@ -126,7 +139,7 @@ const fields: FieldDef[] = [
   { id: "lienholderNameAddress",    label: "34.First Lienholder Name",     type: "text" },
   { id: "lienholderMailingAddress",    label: "34.First Lienholder Mailing Address",     type: "text" },
   { id: "lienholderCity",    label: "34.First Lienholder City",     type: "text" },
-  { id: "lienholderState",    label: "34.First Lienholder State",     type: "text" },
+  { id: "FirstLienholderState",    label: "34.First Lienholder State",     type: "dropdown" },
   { id: "lienholderZip",    label: "34.First Lienholder Zip",     type: "text" },
 //
   { id: "rentalPermit",             label: "35.I Hold Motor Vehicle Retailer (Rental) Permit Number", type: "checkbox" },
@@ -150,11 +163,11 @@ const fields: FieldDef[] = [
   { id: "penalty5Percent",          label: "38.f.Late Tax Payment Penalty of 5%",                   type: "checkbox" },
   { id: "penalty10Percent",         label: "38.f.Late Tax Payment Penalty of 10%",                  type: "checkbox" },
   { id: "penaltyAmount",            label: "38.g.Late Tax Payment Penalty Amount",                  type: "text" },
-  { id: "stateTaxesPaidTo",         label: "38.g.State Taxes Were Paid To",                         type: "text" },
+  { id: "taxPaidToState",         label: "38.g.State Taxes Were Paid To",                         type: "dropdown" },
   { id: "amountTaxesPaid",          label: "38.g.Amount of Taxes Paid to Previous State",           type: "text" },
   { id: "amountDue",                label: "38.h.Amount of Tax and Penalty Due",                    type: "text" },
   { id: "newResidentTax",           label: "$90 New Resident Tax",                             type: "checkbox" },
-  { id: "previousResidentState",    label: "Resident's previous state",                        type: "text" },
+  { id: "residentPreviousState",    label: "Resident's previous state",                        type: "dropdown" },
   { id: "evenTradeTax",             label: "$5 Even Trade Tax",                                type: "checkbox" },
   { id: "giftTax",                  label: "$10 Gift Tax Attach Comptroller Form 14-317",      type: "checkbox" },
   { id: "salvageFee",               label: "$65 Rebuilt Salvage Fee",                          type: "checkbox" },
@@ -212,10 +225,9 @@ export default function Responsive130UForm({
     const state: Record<string, string | boolean> = {};
     fields.forEach(f => {
       if (f.id in initialValues) {
-        // For checkboxes, convert string to boolean if necessary
         if (f.type === "checkbox") {
           const val = initialValues[f.id];
-          state[f.id] = typeof val === 'string' 
+          state[f.id] = typeof val === 'string'
             ? (val === 'true' || val === '1' || val === 'on')
             : Boolean(val);
         } else {
@@ -233,7 +245,6 @@ export default function Responsive130UForm({
   const ownerSigRef = useRef<SigPad>(null);
   const additionalSigRef = useRef<SigPad>(null);
 
-  // Get signature refs map
   const getSigRef = (id: string) => {
     switch (id) {
       case "SellerSignature": return sellerSigRef;
@@ -243,31 +254,27 @@ export default function Responsive130UForm({
     }
   };
 
-  // Extract signature data
   const getSignatureData = (id: string): string | null => {
     const ref = getSigRef(id);
     if (!ref?.current || ref.current.isEmpty()) return null;
     return ref.current.getCanvas().toDataURL("image/png");
   };
 
-  // Update form state with signature data when signatures change
   const updateSignatureInState = (id: string) => {
     const sigData = getSignatureData(id);
     setFormState(prev => ({ ...prev, [id]: sigData || "" }));
   };
 
-  // Notify parent on every change
   useEffect(() => {
     onChange?.(formState);
   }, [formState, onChange]);
 
-  // Handle individual field updates
   const handleChange = (id: string, value: string | boolean) => {
-    setFormState((prev) => ({ ...prev, [id]: value }));
+    setFormState(prev => ({ ...prev, [id]: value }));
   };
 
-  // Render a single field
   const renderField = (f: FieldDef) => {
+    // Checkbox handling
     if (f.type === "checkbox") {
       return (
         <div key={f.id} className="form-field">
@@ -288,6 +295,7 @@ export default function Responsive130UForm({
       );
     }
 
+    // Signature handling
     if (f.type === "signature") {
       const ref = getSigRef(f.id);
       return (
@@ -300,9 +308,9 @@ export default function Responsive130UForm({
             <SignatureCanvas
               ref={ref}
               penColor="black"
-              canvasProps={{ 
-                width: 400, 
-                height: 100, 
+              canvasProps={{
+                width: 400,
+                height: 100,
                 className: "signature-canvas",
                 style: { border: "1px solid #ccc", borderRadius: "4px" }
               }}
@@ -310,10 +318,7 @@ export default function Responsive130UForm({
             />
             <button
               type="button"
-              onClick={() => {
-                ref?.current?.clear();
-                updateSignatureInState(f.id);
-              }}
+              onClick={() => { ref?.current?.clear(); updateSignatureInState(f.id); }}
               className="clear-signature-btn"
             >
               Clear
@@ -323,6 +328,30 @@ export default function Responsive130UForm({
       );
     }
 
+    // State dropdown handling
+    if (STATE_FIELDS.has(f.id)) {
+      return (
+        <div key={f.id} className="form-field">
+          <label htmlFor={f.id} className="form-label">
+            {f.label}
+            {f.required && <span className="text-red-500">*</span>}
+          </label>
+          <select
+            id={f.id}
+            value={String(formState[f.id] || "")}
+            onChange={(e) => handleChange(f.id, e.target.value)}
+            className="form-input"
+          >
+            <option value="">Select State</option>
+            {STATE_ABBREVIATIONS.map(abbr => (
+              <option key={abbr} value={abbr}>{abbr}</option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
+    // Default text input handling
     return (
       <div key={f.id} className="form-field">
         <label htmlFor={f.id} className="form-label">

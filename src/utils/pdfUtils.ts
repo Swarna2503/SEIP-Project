@@ -10,6 +10,7 @@ import {
   PDFOptionList,
   PDFButton,
 } from "pdf-lib";
+import { STATE_NAMES } from './stateAbbreviations';
 
 export interface PdfSignature {
   key: string;
@@ -24,6 +25,18 @@ const SIGNATURE_POSITIONS: Record<
   OwnerSignature:      { pageIndex: 0, x: 25, y:  720, width: 200, height:  15 },
   AdditionalSignature: { pageIndex: 0, x:  25, y:  747, width: 200, height:  15 },
 };
+
+// State fields to convert abbreviations to full names
+const STATE_FIELDS = [
+  "applicantState",
+  "stateOfId",
+  "previousOwnerState",
+  "renewalState",
+  "vehicalLocationState",
+  "FirstLienholderState",
+  "taxPaidToState",
+  "residentPreviousState"
+];
 
 // Helper function to safely get error message
 function getErrorMessage(error: unknown): string {
@@ -112,8 +125,14 @@ export async function fillAndFlattenPdf(
       continue;
     }
 
-    console.log(`🔍 Processing field: ${key} = ${val} (type: ${typeof val})`);
-    await handleField(form, key, val);
+    // Convert state abbreviations to full names
+    if (STATE_FIELDS.includes(key) && typeof val === 'string') {
+      const fullName = STATE_NAMES[val] || val;
+      console.log(`🗺️ Converting state ${val} to ${fullName} for ${key}`);
+      await handleField(form, key, fullName);
+    } else {
+      await handleField(form, key, val);
+    }
   }
 
   // 2) Update appearances to ensure fields are visible
