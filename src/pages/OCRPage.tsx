@@ -1,12 +1,11 @@
-// src/pages/OCRPage.tsx
 import { useNavigate } from "react-router-dom";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { DragEvent, ChangeEvent } from "react";
 import { postOCR } from "../apis/driver_license";
 import { useAuth } from "../hooks/auth";
 import "../styles/ocr.css";
 
-import CameraCapture from "../components/CameraCapture"; // ← new import
+import CameraCapture from "../components/CameraCapture";
 
 interface OcrData {
   name: string;
@@ -29,27 +28,88 @@ export default function OCRPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // new state to show/hide our camera overlay
   const [showCamera, setShowCamera] = useState(false);
+  const [filePreview, setFilePreview] = useState<{
+    url: string;
+    name: string;
+    type: string;
+  } | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
-  // unify File or Blob into a File
+  // Validate file type and size
+  const validateFile = (file: File): boolean => {
+    const validTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+    ];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+
+    if (!validTypes.includes(file.type)) {
+      setFileError(
+        "Invalid file type. Accepted: PDF, JPG, JPEG, PNG."
+      );
+      return false;
+    }
+
+    if (file.size > maxSize) {
+      setFileError(
+        `File too large (${(file.size / 1024 / 1024).toFixed(2)}MB). Max size: 10MB.`
+      );
+      return false;
+    }
+
+    setFileError(null);
+    return true;
+  };
+
+  // Create preview for file
+  const createPreview = (file: File) => {
+    if (file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      setFilePreview({
+        url,
+        name: file.name,
+        type: "image",
+      });
+    } else {
+      setFilePreview({
+        url: "", // PDFs don't get a preview URL
+        name: file.name,
+        type: "pdf",
+      });
+    }
+  };
+
+  // Handle file selection from any source
   const handleFile = async (fileOrBlob: File | Blob | null) => {
     if (!fileOrBlob) return;
     if (!userId) {
       setError("User not logged in. Please log in again.");
       return;
     }
+
+    let file: File;
+    if (fileOrBlob instanceof Blob) {
+      file = new File([fileOrBlob], "capture.jpg", {
+        type: fileOrBlob.type,
+      });
+    } else {
+      file = fileOrBlob;
+    }
+
+    // Validate before processing
+    if (!validateFile(file)) {
+      return;
+    }
+
     setError(null);
+    setFileError(null);
     setLoading(true);
-
-    // convert blob → File
-    const file =
-      fileOrBlob instanceof Blob
-        ? new File([fileOrBlob], "capture.jpg", { type: fileOrBlob.type })
-        : fileOrBlob;
-
+    
     try {
+      createPreview(file);
       const data = await postOCR(file, userId);
       setOcrData({
         name: data.name,
@@ -64,8 +124,10 @@ export default function OCRPage() {
     }
   };
 
-  const onFileChange = (e: ChangeEvent<HTMLInputElement>) =>
-    handleFile(e.target.files?.[0] ?? null);
+  const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+  };
 
   const onDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -74,11 +136,34 @@ export default function OCRPage() {
 
   const onDragOver = (e: DragEvent<HTMLDivElement>) => e.preventDefault();
 
+  // Clear previews when component unmounts
+  useEffect(() => {
+    return () => {
+      if (filePreview?.url) {
+        URL.revokeObjectURL(filePreview.url);
+      }
+    };
+  }, [filePreview]);
+
   const canContinue =
     Boolean(ocrData.name) &&
     Boolean(ocrData.address) &&
     Boolean(ocrData.dlNumber) &&
     Boolean(ocrData.state);
+
+  // Handle file removal
+  const handleRemoveFile = () => {
+    if (filePreview?.url) {
+      URL.revokeObjectURL(filePreview.url);
+    }
+    setFilePreview(null);
+    setOcrData({
+      name: "",
+      address: "",
+      dlNumber: "",
+      state: "",
+    });
+  };
 
   return (
     <div className="main-container">
@@ -89,6 +174,33 @@ export default function OCRPage() {
           to continue.
         </p>
 
+        {/* File preview section */}
+        {filePreview && (
+          <div className="preview-container">
+            {filePreview.type === "image" ? (
+              <img
+                src={filePreview.url}
+                alt="Preview"
+                className="preview-image"
+              />
+            ) : (
+              <div className="pdf-preview">
+                <div className="pdf-icon">📄</div>
+                <div className="pdf-name">{filePreview.name}</div>
+              </div>
+            )}
+            <button
+              type="button"
+              className="btn remove-button"
+              onClick={handleRemoveFile}
+              disabled={loading}
+            >
+              × Remove
+            </button>
+          </div>
+        )}
+
+        {/* Dropzone */}
         <div
           className="dropzone"
           onDrop={onDrop}
@@ -102,27 +214,35 @@ export default function OCRPage() {
           </div>
         </div>
 
-        {/* hidden file input for disk uploads */}
+        {/* Hidden file input */}
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,application/pdf"
+          accept=".pdf,.jpg,.jpeg,.png"
           onChange={onFileChange}
           className="file-input"
         />
 
+        {/* Error banner for file validation */}
+        {fileError && (
+          <div className="error-banner">
+            <div className="error-icon">⚠️</div>
+            <div className="error-message">{fileError}</div>
+          </div>
+        )}
+
         <div className="button-group">
           <label
-            className="btn choose-button"
-            onClick={() => fileInputRef.current?.click()}
+            className={`btn choose-button ${loading ? "disabled" : ""}`}
+            onClick={() => !loading && fileInputRef.current?.click()}
           >
             📁 Choose File
           </label>
 
-          {/* open our in-page camera overlay */}
           <button
-            className="btn camera-button"
-            onClick={() => setShowCamera(true)}
+            className={`btn camera-button ${loading ? "disabled" : ""}`}
+            onClick={() => !loading && setShowCamera(true)}
+            disabled={loading}
           >
             📷 Take a Photo
           </button>
@@ -179,6 +299,7 @@ export default function OCRPage() {
             type="button"
             className="btn skip"
             onClick={() => navigate("/upload-title", { state: { ocr: null } })}
+            disabled={loading}
           >
             &gt; Skip for now
           </button>

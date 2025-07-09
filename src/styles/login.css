@@ -101,8 +101,17 @@
     text-decoration: underline;
   }
   
-  
   .login-card {
     gap: 1rem; 
   }
   
+.input-error {
+  border: 1px solid #e53935;
+}
+
+.error-text {
+  color: #e53935;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+}
