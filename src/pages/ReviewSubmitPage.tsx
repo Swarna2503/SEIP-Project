@@ -1,13 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
-import { saveAs } from 'file-saver';
 import { fillAndFlattenPdf, type PdfSignature } from '../utils/pdfUtils';
+
+import { saveAs } from 'file-saver'; // you can remove this if not used elsewhere
 
 type SigPad = InstanceType<typeof SignatureCanvas>;
 
 export default function ReviewSubmitPage() {
   const { state } = useLocation();
+  const navigate = useNavigate();
   const { titleForm = {}, signatures = {} as Record<string,string> } = (state as any) || {};
 
   const sellerRef     = useRef<SigPad>(null);
@@ -48,7 +50,15 @@ export default function ReviewSubmitPage() {
       if (!resp.ok) throw new Error(`PDF load failed (${resp.status})`);
       const buf = new Uint8Array(await resp.arrayBuffer());
       const out = await fillAndFlattenPdf(buf, titleForm, sigs);
-      saveAs(new Blob([out], { type: 'application/pdf' }), '130-U-signed.pdf');
+
+      // Navigate to preview page with PDF data
+      navigate('/preview', {
+        state: {
+          pdfData: out,
+          formData: titleForm,
+          signatures,
+        }
+      });
     } catch (e: any) {
       setError(e.message ?? 'Unknown error');
     } finally {
@@ -94,13 +104,12 @@ export default function ReviewSubmitPage() {
         style={{
           marginTop:20,
           padding:'0.75rem 1.5rem',
-          backgroundColor: isLoading?'#ccc':'#007bff',
+          backgroundColor: isLoading ? '#ccc' : '#007bff',
           color:'white', border:'none', borderRadius:4,
         }}
       >
-        {isLoading?'Generating PDF…':'Download Signed PDF'}
+        {isLoading ? 'Generating PDF…' : 'Preview & Download'}
       </button>
     </div>
   );
 }
-
