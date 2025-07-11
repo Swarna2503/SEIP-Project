@@ -7,6 +7,8 @@ import TitleUploadPage from "./pages/TitleUploadPage";
 import ResponsiveFormPage from "./pages/responsive-form";
 import ReviewSubmitPage from "./pages/ReviewSubmitPage";
 import PreviewPage from "./pages/PreviewPage";
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import RegisterPage from "./pages/RegisterPage";
 import PrivateRoute from "./components/privateroute";
 
 export default function App() {
@@ -16,6 +18,8 @@ export default function App() {
     <Routes>
       {/* public route */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
 
       <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
       <Route path="/ocr" element={<PrivateRoute><OCRPage /></PrivateRoute>} />
