@@ -254,6 +254,8 @@ export default function TitleUploadPage() {
           accept=".pdf,.jpg,.jpeg,.png"
           onChange={onFileChange}
           className="file-input"
+          title="Upload your title document (PDF, JPG, JPEG, PNG)"
+          placeholder="Choose a file"
         />
 
         <div className="button-group">

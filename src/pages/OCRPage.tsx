@@ -226,6 +226,8 @@ export default function OCRPage() {
           accept=".pdf,.jpg,.jpeg,.png"
           onChange={onFileChange}
           className="file-input"
+          title="Upload your driver's license file"
+          placeholder="Choose a file to upload"
         />
 
         {fileError && (

@@ -30,13 +30,31 @@ export default function RegisterPage() {
         {error && <p className="error-text">{error}</p>}
 
         <label>Email Address</label>
-        <input type="email" value={email} onChange={e => setEmail(e.target.value)} />
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="Enter your email address"
+          title="Email Address"
+        />
 
         <label>Password</label>
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
+        <input
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          placeholder="Enter your password"
+          title="Password"
+        />
 
         <label>Confirm Password</label>
-        <input type="password" value={confirm} onChange={e => setConfirm(e.target.value)} />
+        <input
+          type="password"
+          value={confirm}
+          onChange={e => setConfirm(e.target.value)}
+          placeholder="Confirm your password"
+          title="Confirm Password"
+        />
 
         <button type="submit" disabled={!canSubmit || loading}>
           Register
