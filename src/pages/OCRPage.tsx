@@ -6,18 +6,17 @@ import { postOCR, getLatestOCR } from "../apis/driver_license";
 import { useAuth } from "../hooks/auth";
 import "../styles/ocr.css";
 
-import CameraCapture from "../components/CameraCapture"; // ← new import
+import CameraCapture from "../components/CameraCapture";
 
 interface OcrData {
   name: string;
   address: string;
   dlNumber: string;
   state: string;
-  city?: string; // new added optional fields
-  street_address?: string; // new added optional field
-  zip_code?: string;       // new added optional field
+  city?: string;
+  street_address?: string;
+  zip_code?: string;
 }
-
 
 export default function OCRPage() {
   const navigate = useNavigate();
@@ -25,16 +24,28 @@ export default function OCRPage() {
   const userId = user?.user_id;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [ocrData, setOcrData] = useState<OcrData>({
     name: "",
     address: "",
     dlNumber: "",
     state: "",
-    street_address: "", // new added optional field
-    zip_code: "",       // new added optional field
-    city: "",           // new added optional field
+    street_address: "",
+    zip_code: "",
+    city: "",
   });
-  
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [filePreview, setFilePreview] = useState<{
+    url: string;
+    name: string;
+    type: string;
+  } | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+
+  // Load latest OCR from backend
   useEffect(() => {
     const fetchLatest = async () => {
       if (!userId) return;
@@ -51,51 +62,70 @@ export default function OCRPage() {
             city: data.city,
           });
         }
-      } catch (err) {
+      } catch {
         console.warn("No previous OCR found or fetch failed.");
       }
     };
-
     fetchLatest();
   }, [userId]);
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // File validation
+  const validateFile = (file: File): boolean => {
+    const validTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+    ];
+    const maxSize = 10 * 1024 * 1024; // 10MB
 
-  // new state to show/hide our camera overlay
-  const [showCamera, setShowCamera] = useState(false);
-
-  // unify File or Blob into a File
-  const handleFile = async (fileOrBlob: File | Blob | null) => {
-    if (!fileOrBlob) return;
-    if (!userId) {
-      setError("User not logged in. Please log in again.");
-      return;
+    if (!validTypes.includes(file.type)) {
+      setFileError("Invalid file type. Accepted: PDF, JPG, JPEG, PNG.");
+      return false;
     }
-    setError(null);
-    setLoading(true);
-
-    // convert blob → File
-    let uploadFile: File;
-    if (fileOrBlob instanceof File) {
-      // already a File: keep its original name
-      uploadFile = fileOrBlob;
-    } else {
-      // pure Blob from camera: generate a unique filename
-      const ext = fileOrBlob.type.split("/")[1] ?? "jpg";
-      uploadFile = new File(
-        [fileOrBlob],
-        `capture-${Date.now()}.${ext}`,
-        { type: fileOrBlob.type }
+    if (file.size > maxSize) {
+      setFileError(
+        `File too large (${(file.size / 1024 / 1024).toFixed(
+          2
+        )}MB). Max size: 10MB.`
       );
+      return false;
     }
-    // const file =
-    //   fileOrBlob instanceof Blob
-    //     ? new File([fileOrBlob], "capture.jpg", { type: fileOrBlob.type })
-    //     : fileOrBlob;
+    setFileError(null);
+    return true;
+  };
+
+  const createPreview = (file: File) => {
+    if (file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      setFilePreview({ url, name: file.name, type: "image" });
+    } else {
+      setFilePreview({ url: "", name: file.name, type: "pdf" });
+    }
+  };
+
+  const handleFile = async (fileOrBlob: File | Blob | null) => {
+    if (!fileOrBlob || !userId) return;
+
+    let file: File;
+    if (fileOrBlob instanceof File) {
+      file = fileOrBlob;
+    } else {
+      const ext = fileOrBlob.type.split("/")[1] ?? "jpg";
+      file = new File([fileOrBlob], `capture-${Date.now()}.${ext}`, {
+        type: fileOrBlob.type,
+      });
+    }
+
+    if (!validateFile(file)) return;
+
+    setLoading(true);
+    setError(null);
+    setFileError(null);
+    createPreview(file);
 
     try {
-      const data = await postOCR(uploadFile, userId);
+      const data = await postOCR(file, userId);
       setOcrData({
         name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
         address: data.address,
@@ -123,20 +153,28 @@ export default function OCRPage() {
   const onDragOver = (e: DragEvent<HTMLDivElement>) => e.preventDefault();
 
   const canContinue =
-    Boolean(ocrData.name) &&
-    Boolean(ocrData.address) &&
-    Boolean(ocrData.dlNumber) &&
-    Boolean(ocrData.state) &&
-    Boolean(ocrData.street_address) &&
-    Boolean(ocrData.zip_code) &&
-    Boolean(ocrData.city);
+    ocrData.name &&
+    ocrData.address &&
+    ocrData.dlNumber &&
+    ocrData.state &&
+    ocrData.city &&
+    ocrData.zip_code &&
+    ocrData.street_address;
 
-  const handleNext = () => {
-    navigate("/upload-title", { state: { ocr: ocrData } });
-  };
-
-  const handleSkip = () => {
-    navigate("/upload-title", { state: { ocr: null } });
+  const handleRemoveFile = () => {
+    if (filePreview?.url) {
+      URL.revokeObjectURL(filePreview.url);
+    }
+    setFilePreview(null);
+    setOcrData({
+      name: "",
+      address: "",
+      dlNumber: "",
+      state: "",
+      street_address: "",
+      zip_code: "",
+      city: "",
+    });
   };
 
   return (
@@ -147,6 +185,27 @@ export default function OCRPage() {
           Please upload a clear photo or PDF of your driver’s license, or skip
           to continue.
         </p>
+
+        {filePreview && (
+          <div className="preview-container">
+            {filePreview.type === "image" ? (
+              <img src={filePreview.url} alt="Preview" className="preview-image" />
+            ) : (
+              <div className="pdf-preview">
+                <div className="pdf-icon">📄</div>
+                <div className="pdf-name">{filePreview.name}</div>
+              </div>
+            )}
+            <button
+              type="button"
+              className="btn remove-button"
+              onClick={handleRemoveFile}
+              disabled={loading}
+            >
+              × Remove
+            </button>
+          </div>
+        )}
 
         <div
           className="dropzone"
@@ -161,27 +220,31 @@ export default function OCRPage() {
           </div>
         </div>
 
-        {/* hidden file input for disk uploads */}
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*,application/pdf"
+          accept=".pdf,.jpg,.jpeg,.png"
           onChange={onFileChange}
           className="file-input"
         />
 
+        {fileError && (
+          <div className="error-banner">
+            <div className="error-icon">⚠️</div>
+            <div className="error-message">{fileError}</div>
+          </div>
+        )}
+
         <div className="button-group">
           <label
-            className="btn choose-button"
-            onClick={() => fileInputRef.current?.click()}
+            className={`btn choose-button ${loading ? "disabled" : ""}`}
+            onClick={() => !loading && fileInputRef.current?.click()}
           >
             📁 Choose File
           </label>
-
-          {/* open our in-page camera overlay */}
           <button
-            className="btn camera-button"
-            onClick={() => setShowCamera(true)}
+            className={`btn camera-button ${loading ? "disabled" : ""}`}
+            onClick={() => !loading && setShowCamera(true)}
           >
             📷 Take a Photo
           </button>
@@ -192,27 +255,13 @@ export default function OCRPage() {
 
         {!loading && ocrData.name && (
           <div className="ocr-data">
-            <p>
-              <strong>Extracted Name:</strong> {ocrData.name || "N/A"}
-            </p>
-            <p>
-              <strong>Address:</strong> {ocrData.address || "N/A"}
-            </p>
-            <p>
-              <strong>DL #:</strong> {ocrData.dlNumber || "N/A"}
-            </p>
-            <p>
-              <strong>State:</strong> {ocrData.state || "N/A"}
-            </p>
-            <p>
-              <strong>City:</strong> {ocrData.city || "N/A"}
-            </p>
-            <p>
-              <strong>Street Address:</strong> {ocrData.street_address || "N/A"}
-            </p>
-            <p>
-              <strong>ZIP Code:</strong> {ocrData.zip_code || "N/A"}
-            </p>
+            <p><strong>Name:</strong> {ocrData.name || "N/A"}</p>
+            <p><strong>Address:</strong> {ocrData.address || "N/A"}</p>
+            <p><strong>DL #:</strong> {ocrData.dlNumber || "N/A"}</p>
+            <p><strong>State:</strong> {ocrData.state || "N/A"}</p>
+            <p><strong>City:</strong> {ocrData.city || "N/A"}</p>
+            <p><strong>Street Address:</strong> {ocrData.street_address || "N/A"}</p>
+            <p><strong>ZIP Code:</strong> {ocrData.zip_code || "N/A"}</p>
           </div>
         )}
 
@@ -228,8 +277,8 @@ export default function OCRPage() {
         <div className="skip-box">
           <h4>Skip Upload:</h4>
           <p>
-            You can skip this step and upload your driver's license later if
-            needed. However, having it ready will help speed up the process.
+            You can skip this step and upload your driver's license later if needed. 
+            However, having it ready will help speed up the process.
           </p>
         </div>
 
@@ -237,9 +286,7 @@ export default function OCRPage() {
           <button
             className="btn primary"
             disabled={!canContinue || loading}
-            onClick={() =>
-              navigate("/upload-title", { state: { ocr: ocrData } })
-            }
+            onClick={() => navigate("/upload-title", { state: { ocr: ocrData } })}
           >
             Continue →
           </button>
@@ -247,6 +294,7 @@ export default function OCRPage() {
             type="button"
             className="btn skip"
             onClick={() => navigate("/upload-title", { state: { ocr: null } })}
+            disabled={loading}
           >
             &gt; Skip for now
           </button>

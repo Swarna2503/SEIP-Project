@@ -1,5 +1,5 @@
 // src/pages/LoginPage.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/auth";
 import "../styles/login.css";
@@ -8,18 +8,44 @@ export default function LoginPage() {
   const { login, loading, error } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({ email: "", password: "" });
   const navigate = useNavigate();
 
-  // Can only submit once both fields have text
-  const canSubmit = email.trim() !== "" && password.trim() !== "";
+  // 校验函数
+  const validateEmail = (email: string) => {
+    if (!email.trim()) return "Email is required";
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return "Invalid email format";
+    return "";
+  };
+
+  const validatePassword = (password: string) => {
+    if (!password) return "Password is required";
+    if (password.length < 8) return "Password must be at least 8 characters";
+    return "";
+  };
+
+  // 动态更新错误信息
+  useEffect(() => {
+    setErrors({
+      email: validateEmail(email),
+      password: validatePassword(password),
+    });
+  }, [email, password]);
+
+  const canSubmit =
+    email.trim() !== "" &&
+    password.trim() !== "" &&
+    !errors.email &&
+    !errors.password;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canSubmit) return;
     try {
-      // AuthProvider.login will set user and navigate("/")
       await login(email, password);
     } catch {
-      // errors are surfaced in `error`
+      // errors handled in useAuth
     }
   };
 
@@ -34,9 +60,11 @@ export default function LoginPage() {
           id="email"
           type="email"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
+          className={errors.email ? "input-error" : ""}
         />
+        {errors.email && <p className="error-text">{errors.email}</p>}
 
         <label htmlFor="password">Password</label>
         <input
@@ -46,7 +74,9 @@ export default function LoginPage() {
           placeholder="••••••••"
           onChange={(e) => setPassword(e.target.value)}
           disabled={loading}
+          className={errors.password ? "input-error" : ""}
         />
+        {errors.password && <p className="error-text">{errors.password}</p>}
 
         <button type="submit" disabled={!canSubmit || loading}>
           Continue →
