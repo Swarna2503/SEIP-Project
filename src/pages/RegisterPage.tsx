@@ -1,4 +1,4 @@
-// src/pages/RegisterPage.tsx (同样移除 disabled)
+// src/pages/RegisterPage.tsx
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/auth';
 import { useNavigate } from 'react-router-dom';
@@ -19,7 +19,7 @@ export default function RegisterPage() {
       await register(email, password);
       navigate('/verify-email', { state: { email } });
     } catch {
-      // 错误已在 useAuth 中处理
+      
     }
   };
 

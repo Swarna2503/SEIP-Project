@@ -13,7 +13,7 @@ export default function VerifyEmailPage() {
   const [info, setInfo] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
 
-  // 倒计时逻辑：timer 类型改为 number
+  // logic about countdown timer
   useEffect(() => {
     let timer: number;
     if (cooldown > 0) {
@@ -42,7 +42,7 @@ export default function VerifyEmailPage() {
       const { ok, data } = await resendCode(email);
       if (!ok) throw new Error(data.message || 'Resend failed');
       setInfo(data.message);
-      setCooldown(60); // 启动 60 秒倒计时
+      setCooldown(60); // Start 60 seconds countdown
     } catch (e: any) {
       setError(e.message);
     }

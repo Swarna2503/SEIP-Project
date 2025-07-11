@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 初始验证 session，可以在这里设置 loading
+    // initially check if user is logged in
     setLoading(true);
     fetch("http://127.0.0.1:8000/profile", { credentials: "include" })
       .then(res => {
