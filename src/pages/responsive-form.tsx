@@ -30,10 +30,14 @@ export default function ResponsiveFormPage() {
       odometerReading: title?.odometer_reading ?? "",
       lienholderNameAddress: title?.first_lienholder ?? "",
       previousOwner: title?.previous_owner ?? "",
+
       applicantName: dl?.first_name ?? "",
       applicantLastName: dl?.last_name ?? "",
-      applicantMailingAddress: dl?.address ?? "",
+      // add new fields 
+      applicantMailingAddress: dl?.street_address ?? dl?.address ?? "",
+      applicantCity: dl?.city ?? "",
       applicantState: dl?.state ?? "",
+      applicantZip: dl?.zip_code ?? "", 
       photoIdNumber: dl?.dlNumber ?? "",
       titleRegistration: false,
       titleOnly: false,

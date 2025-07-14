@@ -98,8 +98,9 @@ export default function HomePage() {
                 <h4>Identification</h4>
                 <p>Valid photo identification – see acceptable ID types below</p>
                 <div className="id-dropdown" style={{ marginTop: "0.75rem" }}>
-                  <label>Acceptable Photo ID Types</label>
+                  <label htmlFor="id-type-select">Acceptable Photo ID Types</label>
                   <select
+                    id="id-type-select"
                     value={selectedIdType}
                     onChange={(e) => setSelectedIdType(e.target.value)}
                   >

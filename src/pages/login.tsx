@@ -1,20 +1,17 @@
+// src/pages/LoginPage.tsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/auth";
 import "../styles/login.css";
 
 export default function LoginPage() {
-  const { login, register, loading, error } = useAuth();
+  const { login, loading, error } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [errors, setErrors] = useState({
-    email: "",
-    password: "",
-    name: ""
-  });
+  const [errors, setErrors] = useState({ email: "", password: "" });
+  const navigate = useNavigate();
 
-  // Validation functions
+  // 校验函数
   const validateEmail = (email: string) => {
     if (!email.trim()) return "Email is required";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,86 +25,41 @@ export default function LoginPage() {
     return "";
   };
 
-  const validateName = (name: string) => {
-    if (isRegistering) {
-      if (!name.trim()) return "Name is required";
-      if (name.trim().length < 2) return "Name must be at least 2 characters";
-    }
-    return "";
-  };
-
-  // Validate fields on change
+  // 动态更新错误信息
   useEffect(() => {
     setErrors({
       email: validateEmail(email),
       password: validatePassword(password),
-      name: validateName(name)
     });
-  }, [email, password, name, isRegistering]);
+  }, [email, password]);
 
-  // Check if form is valid
-  const isFormValid = () => {
-    const emailValid = !validateEmail(email);
-    const passwordValid = !validatePassword(password);
-    const nameValid = isRegistering ? !validateName(name) : true;
-    
-    return emailValid && passwordValid && nameValid;
-  };
+  const canSubmit =
+    email.trim() !== "" &&
+    password.trim() !== "" &&
+    !errors.email &&
+    !errors.password;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isFormValid()) return;
-
+    if (!canSubmit) return;
     try {
-      if (isRegistering) {
-        await register(email, password, name);
-      } else {
-        await login(email, password);
-      }
+      await login(email, password);
     } catch {
-      // error handled in useAuth hook
+      // errors handled in useAuth
     }
-  };
-
-  const toggleFormMode = () => {
-    setIsRegistering(!isRegistering);
-    setEmail("");
-    setPassword("");
-    setName("");
-    setErrors({ email: "", password: "", name: "" });
   };
 
   return (
     <div className="login-page">
       <form className="login-card" onSubmit={handleSubmit}>
-        <h2>{isRegistering ? "Create Account" : "Sign In"}</h2>
-        
+        <h2>Sign In</h2>
         {error && <p className="error-text">{error}</p>}
-
-        {isRegistering && (
-          <>
-            <label htmlFor="name">Full Name</label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              autoComplete="name"
-              placeholder="John Doe"
-              onChange={(e) => setName(e.target.value)}
-              disabled={loading}
-              className={errors.name ? "input-error" : ""}
-            />
-            {errors.name && <p className="error-text">{errors.name}</p>}
-          </>
-        )}
 
         <label htmlFor="email">Email Address</label>
         <input
           id="email"
           type="email"
           value={email}
-          autoComplete="username"
-          placeholder="you@example.com"
           onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
           className={errors.email ? "input-error" : ""}
@@ -119,7 +71,6 @@ export default function LoginPage() {
           id="password"
           type="password"
           value={password}
-          autoComplete={isRegistering ? "new-password" : "current-password"}
           placeholder="••••••••"
           onChange={(e) => setPassword(e.target.value)}
           disabled={loading}
@@ -127,25 +78,20 @@ export default function LoginPage() {
         />
         {errors.password && <p className="error-text">{errors.password}</p>}
 
-        <button 
-          type="submit" 
-          disabled={!isFormValid() || loading}
-        >
-          {isRegistering ? "Create Account" : "Continue →"}
+        <button type="submit" disabled={!canSubmit || loading}>
+          Continue →
         </button>
 
-        <div className="form-toggle">
-          <span>
-            {isRegistering ? "Already have an account?" : "Don't have an account?"}
-          </span>
-          <button 
-            type="button" 
-            onClick={toggleFormMode}
+        <p className="form-toggle-text">
+          Don't have an account?{" "}
+          <button
+            type="button"
             className="toggle-button"
+            onClick={() => navigate("/register")}
           >
-            {isRegistering ? "Sign In" : "Register"}
+            Register
           </button>
-        </div>
+        </p>
       </form>
     </div>
   );
