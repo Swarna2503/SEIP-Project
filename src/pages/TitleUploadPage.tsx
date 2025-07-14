@@ -180,7 +180,7 @@ export default function TitleUploadPage() {
   return (
     <div className="main-container">
       <div className="page-container">
-        <h1 className="heading">Step 2: Upload Your Title Document</h1>
+        <h1 className="heading">Step 2: Upload Your Vehicle Title Document</h1>
         <p className="description">
           {ocr ? (
             <>

@@ -1,9 +1,8 @@
+// src/pages/ReviewSubmitPage.tsx
 import React, { useRef, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
 import { fillAndFlattenPdf, type PdfSignature } from '../utils/pdfUtils';
-
-import { saveAs } from 'file-saver'; // you can remove this if not used elsewhere
 
 type SigPad = InstanceType<typeof SignatureCanvas>;
 
@@ -16,7 +15,7 @@ export default function ReviewSubmitPage() {
   const ownerRef      = useRef<SigPad>(null);
   const additionalRef = useRef<SigPad>(null);
 
-  // preload existing signature data-URLs
+  // Preload existing signature data-URLs
   useEffect(() => {
     const load = (r: React.RefObject<SigPad>, url?: string) => {
       if (r.current && url?.startsWith('data:image')) {
@@ -46,8 +45,10 @@ export default function ReviewSubmitPage() {
         { key: 'OwnerSignature',      dataUrl: signatures.OwnerSignature      || getSig(ownerRef)      },
         { key: 'AdditionalSignature', dataUrl: signatures.AdditionalSignature || getSig(additionalRef) },
       ];
+      
       const resp = await fetch('/130-U.pdf');
       if (!resp.ok) throw new Error(`PDF load failed (${resp.status})`);
+      
       const buf = new Uint8Array(await resp.arrayBuffer());
       const out = await fillAndFlattenPdf(buf, titleForm, sigs);
 
@@ -55,7 +56,7 @@ export default function ReviewSubmitPage() {
       navigate('/preview', {
         state: {
           pdfData: out,
-          formData: titleForm,
+          formData: titleForm,  // Contains state abbreviations
           signatures,
         }
       });

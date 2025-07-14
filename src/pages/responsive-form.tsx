@@ -14,8 +14,10 @@ export default function ResponsiveFormPage() {
   const location = useLocation();
   const state = location.state as LocationState | undefined;
   const { ocr, titleOcr, titleFile } = state ?? {};
-  console.log("Driver License OCR:", ocr);
-  console.log("Title OCR:", titleOcr);
+  
+  const [formValid, setFormValid] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [showAllErrors, setShowAllErrors] = useState(false);
 
   function mapOcrToFormValues(dl: any, title: any): Record<string, string | boolean> {
     return {
@@ -33,7 +35,6 @@ export default function ResponsiveFormPage() {
       applicantMailingAddress: dl?.address ?? "",
       applicantState: dl?.state ?? "",
       photoIdNumber: dl?.dlNumber ?? "",
-      // Initialize checkbox states
       titleRegistration: false,
       titleOnly: false,
       registrationPurposesOnly: false,
@@ -92,11 +93,30 @@ export default function ResponsiveFormPage() {
 
   const [formState, setFormState] = useState<Record<string, any>>({});
 
-  const handleFormChange = (newState: Record<string, any>) => {
+  const handleFormChange = (newState: Record<string, any>, isValid: boolean, errors: Record<string, string>) => {
     setFormState(newState);
+    setFormValid(isValid);
+    setValidationErrors(errors);
+    setShowAllErrors(false);
   };
 
   const handleNext = () => {
+    if (!formValid) {
+      setShowAllErrors(true);
+      
+      // Find first error and scroll to it
+      const firstErrorField = Object.keys(validationErrors)[0];
+      if (firstErrorField) {
+        const element = document.getElementById(firstErrorField);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Focus after scroll completes
+          setTimeout(() => element.focus({ preventScroll: true }), 500);
+        }
+      }
+      return;
+    }
+
     navigate("/review-submit", {
       state: { 
         ocr, 
@@ -114,6 +134,13 @@ export default function ResponsiveFormPage() {
   return (
     <div className="responsive-form-page">
       <h1 className="page-title">Step 3: Complete Title Form</h1>
+      
+      {showAllErrors && Object.keys(validationErrors).length > 0 && (
+        <div className="error-banner">
+          <span className="error-count">{Object.keys(validationErrors).length} error(s)</span> 
+          found in the form. Please fix them to continue.
+        </div>
+      )}
 
       <div className="form-card">
         <div className="sections-container">
@@ -122,12 +149,16 @@ export default function ResponsiveFormPage() {
             sectionClass="section-card"
             gridClass="fields-grid"
             initialValues={mappedOcr}
+            showAllErrors={showAllErrors}
           />
         </div>
       </div>
 
       <div className="form-footer">
-        <button className="btn-next" onClick={handleNext}>
+        <button 
+          className="btn-next" 
+          onClick={handleNext}
+        >
           Next: Review &amp; Submit →
         </button>
       </div>
