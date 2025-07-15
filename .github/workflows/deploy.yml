@@ -21,7 +21,7 @@ jobs:
 
       - name: Intsall dependencies & Build
         run: |
-          npm ci
+          npm ci --legacy-peer-deps
           npm run build
 
       - name: configure AWS credentials
