@@ -121,7 +121,7 @@ export default function ResponsiveFormPage() {
       return;
     }
 
-    navigate("/review-submit", {
+    navigate("/signature", {
       state: { 
         ocr, 
         titleFile, 
