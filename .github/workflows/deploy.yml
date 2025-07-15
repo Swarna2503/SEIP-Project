@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - add_backend_logic
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -18,7 +19,7 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Intsal dependencies & Build
+      - name: Intsall dependencies & Build
         run: |
           npm ci
           npm run build
@@ -39,3 +40,4 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_ID }} \
             --paths "/*"
+
