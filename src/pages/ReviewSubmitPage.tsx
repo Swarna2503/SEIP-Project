@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
 import { fillAndFlattenPdf, type PdfSignature } from '../utils/pdfUtils';
 
-import { saveAs } from 'file-saver'; // you can remove this if not used elsewhere
+// import { saveAs } from 'file-saver'; // you can remove this if not used elsewhere
 
 type SigPad = InstanceType<typeof SignatureCanvas>;
 

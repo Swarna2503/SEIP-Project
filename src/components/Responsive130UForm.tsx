@@ -1,7 +1,7 @@
 // src/components/Responsive130UForm.tsx
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import SignatureCanvas from "react-signature-canvas";
-import { STATE_ABBREVIATIONS, STATE_NAMES } from '../utils/stateAbbreviations';
+import { STATE_ABBREVIATIONS} from '../utils/stateAbbreviations';
 
 
 interface FieldDef {

@@ -1,14 +1,14 @@
 // src/utils/pdfUtils.ts
 import {
   PDFDocument,
-  PDFCheckBox,
-  PDFTextField,
+  // PDFCheckBox,
+  // PDFTextField,
   StandardFonts,
-  rgb,
-  PDFField,
-  PDFDropdown,
-  PDFOptionList,
-  PDFButton,
+  // rgb,
+  // PDFField,
+  // PDFDropdown,
+  // PDFOptionList,
+  // PDFButton,
 } from "pdf-lib";
 import { STATE_NAMES } from './stateAbbreviations';
 
