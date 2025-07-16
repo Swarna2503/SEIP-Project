@@ -190,7 +190,7 @@ export default function OCRPage() {
   return (
     <div className="main-container">
       <div className="page-container">
-        <h1 className="heading">Step 1: Upload & OCR Driver’s License</h1>
+        <h1 className="heading">Step 1: Upload Your Driver’s License</h1>
         <p className="description">
           Please upload a clear photo or PDF of your driver’s license, or skip
           to continue.

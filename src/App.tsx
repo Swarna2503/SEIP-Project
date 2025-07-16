@@ -4,11 +4,12 @@ import HomePage from "./pages/HomePage";
 import OCRPage from "./pages/OCRPage";
 import TitleUploadPage from "./pages/TitleUploadPage";
 import ResponsiveFormPage from "./pages/responsive-form";
-import ReviewSubmitPage from "./pages/ReviewSubmitPage";
+import SignaturePage from "./pages/signaturePage";
 import PreviewPage from "./pages/PreviewPage";
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import RegisterPage from "./pages/RegisterPage";
 import PrivateRoute from "./components/privateroute";
+import SubmitPage from "./pages/submitpage";
 
 export default function App() {
   // const isLoggedIn = Boolean(sessionStorage.getItem("userEmail"));
@@ -24,8 +25,9 @@ export default function App() {
       <Route path="/ocr" element={<PrivateRoute><OCRPage /></PrivateRoute>} />
       <Route path="/upload-title" element={<PrivateRoute><TitleUploadPage /></PrivateRoute>} />
       <Route path="/responsive-form" element={<PrivateRoute><ResponsiveFormPage /></PrivateRoute>} />
-      <Route path="/review-submit" element={<PrivateRoute><ReviewSubmitPage /></PrivateRoute>} />
+      <Route path="/signature" element={<PrivateRoute><SignaturePage /></PrivateRoute>} />
       <Route path="/preview" element={<PrivateRoute><PreviewPage /></PrivateRoute>} />
+      <Route path="/submit" element={<PrivateRoute><SubmitPage /></PrivateRoute>} />
     </Routes>
   );
 }
