@@ -1,13 +1,9 @@
 // src/apis/verify.ts
-import { apiBaseURL } from "./config";
+import { fetchWrapper } from "./fetchWrapper";
 
 export async function verifyEmail(email: string, code: string) {
-  const response = await fetch(`${apiBaseURL}/verify`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
+  return await fetchWrapper("/verify", {
+    method: "POST",
     body: JSON.stringify({ email, code }),
   });
-  const data = await response.json();
-  return { ok: response.ok, data };
 }

@@ -1,42 +1,49 @@
 import { useState, useRef, useEffect } from "react";
 import type { DragEvent, ChangeEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { postTitleOCR } from "../apis/title";
+import { postTitleOCR, getLatestTitleOCR } from "../apis/title";
 import { useAuth } from "../hooks/auth";
 import CameraCapture from "../components/CameraCapture";
 import "../styles/title.css";
 
 export interface TitleOcrData {
-  tx_dmv_number?: string;
-  vehicle_id_number?: string;
+  state?: string;
+  document_type?: string;
+  texas_department_of_motor_vehicles?: string;
+
+  vehicle_identification_number?: string;
   year_model?: string;
   make_of_vehicle?: string;
   body_style?: string;
-  title_document_number?: string;
-  date_title_issued?: string;
   model?: string;
   MFG?: string;
   weight?: string;
   license_number?: string;
-  previous_owner?: string;
+  title_document_number?: string;
+  date_title_issued?: string;
   odometer_reading?: string;
-  owner_remarks_1?: string;
-  owner_remarks_2?: string;
-  owner_remarks_3?: string;
-  remarks?: string;
-  date_of_lien_1?: string;
+  odometer_remark?: string;
+
+  previous_owner?: string;
+  owner_name?: string;
+  owner_address?: string;
+
   first_lienholder?: string;
-  first_lien_released?: string;
-  by_authorized_agent_1?: string;
-  date_of_lien_2?: string;
+  first_date_of_lien?: string;
+  first_lien_released_date?: string;
+  first_authorized_agent?: string;
   second_lienholder?: string;
-  second_lien_released?: string;
-  by_authorized_agent_2?: string;
-  date_of_lien_3?: string;
+  second_date_of_lien?: string;
+  second_lien_released_date?: string;
+  second_authorized_agent?: string;
   third_lienholder?: string;
-  third_lien_released?: string;
-  by_authorized_agent_3?: string;
+  third_date_of_lien?: string;
+  third_lien_released_date?: string;
+  third_authorized_agent?: string;
+
+  form_revision?: string;
 }
+
 
 interface LocationState {
   ocr: { name: string } | null;
@@ -57,6 +64,20 @@ export default function TitleUploadPage() {
   const [titleOcrData, setTitleOcrData] = useState<TitleOcrData>({});
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
+
+  const fieldsToShow = [
+    { key: "vehicle_identification_number", label: "Vehicle Identification Number" },
+    { key: "year_model",           label: "Year" },
+    { key: "make_of_vehicle",      label: "Make" },
+    { key: "body_style",           label: "Body Style" },
+    { key: "model",                label: "Model" },
+    { key: "mfg_capacity_in_tons", label: "Empty Weight" },
+    { key: "previous_owner",       label: "Previous Owner" },
+    { key: "owner_name",           label: "Current Owner" },
+    { key: "city",                 label: "City" },
+    { key: "state",                label: "State" },
+  ];
+
 
   // Validate file type and size
   const validateFile = (file: File): boolean => {
@@ -123,7 +144,7 @@ export default function TitleUploadPage() {
 
     try {
       const data = await postTitleOCR(pickedFile, userId);
-      setTitleOcrData(data);
+      setTitleOcrData(data.ocr_result);
     } catch (err: any) {
       setOcrError(err.message || "OCR processing failed");
     } finally {
@@ -176,6 +197,7 @@ export default function TitleUploadPage() {
   };
 
   const validationPassed = file !== null && !fileError;
+  console.log(titleOcrData)
 
   return (
     <div className="main-container">
@@ -273,6 +295,34 @@ export default function TitleUploadPage() {
           >
             📷 Take a Photo
           </button>
+
+          <button
+            className="btn secondary"
+            onClick={async () => {
+              if (!userId) {
+                setOcrError("Please log in first.");
+                return;
+              }
+              try {
+                setIsUploading(true);
+                const data = await getLatestTitleOCR(userId);
+                if (data && data.ocr_result) {
+                  setTitleOcrData(data.ocr_result);
+                  setOcrError(null);
+                } else {
+                  setOcrError("No previous title OCR data found.");
+                }
+              } catch (err: any) {
+                setOcrError(err.message || "Failed to load previous OCR record.");
+              } finally {
+                setIsUploading(false);
+              }
+            }}
+            disabled={isUploading}
+          >
+            ⟳ Load Record
+          </button>
+
         </div>
 
         {isUploading && <p className="status-text">Processing file...</p>}
@@ -282,14 +332,14 @@ export default function TitleUploadPage() {
           <div className="ocr-preview">
             <h2 className="preview-heading">Extracted Title Information</h2>
             <ul className="ocr-list">
-              {Object.entries(titleOcrData).map(
-                ([k, v]) =>
-                  v ? (
-                    <li key={k}>
-                      <strong>{k.replace(/_/g, " ")}</strong>: {v}
-                    </li>
-                  ) : null
-              )}
+              {fieldsToShow.map(({ key, label }) => {
+                const val = (titleOcrData as any)[key];
+                return val ? (
+                  <li key={key}>
+                    <strong>{label}:</strong> {val}
+                  </li>
+                ) : null;
+              })}
             </ul>
           </div>
         )}

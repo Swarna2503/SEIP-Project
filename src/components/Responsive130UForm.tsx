@@ -1,5 +1,5 @@
 // src/components/Responsive130UForm.tsx
-import { useState, useEffect, useRef } from "react";
+import {useRef } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { STATE_ABBREVIATIONS} from '../utils/stateAbbreviations';
 
@@ -33,7 +33,7 @@ const STATE_FIELDS = new Set([
 ]);
 
 // Updated fields array with signature type instead of image
-const fields: FieldDef[] = [
+export const fields: FieldDef[] = [
   // 0–3: "Applying for" checkboxes
   { id: "titleRegistration",           label: "Title & Registration",                  type: "checkbox" },
   { id: "titleOnly",                   label: "Title Only",                              type: "checkbox" },
@@ -192,7 +192,6 @@ const fields: FieldDef[] = [
   { id: "additionalApplicantDate",  label: "Date_3",                                           type: "text" },
   //
 ];
-
 // Define sections by index ranges
 const sections = [
   { title: "Applying For",                         from: 0,   to: 3   },
@@ -220,26 +219,6 @@ export default function Responsive130UForm({
   gridClass = "",
   initialValues = {},
 }: Responsive130UFormProps) {
-  // Initialize form state with proper boolean conversion
-  const [formState, setFormState] = useState<Record<string, string | boolean>>(() => {
-    const state: Record<string, string | boolean> = {};
-    fields.forEach(f => {
-      if (f.id in initialValues) {
-        if (f.type === "checkbox") {
-          const val = initialValues[f.id];
-          state[f.id] = typeof val === 'string'
-            ? (val === 'true' || val === '1' || val === 'on')
-            : Boolean(val);
-        } else {
-          state[f.id] = initialValues[f.id];
-        }
-      } else {
-        state[f.id] = f.type === "checkbox" ? false : "";
-      }
-    });
-    return state;
-  });
-
   // Refs for signature pads
   const sellerSigRef = useRef<SigPad>(null);
   const ownerSigRef = useRef<SigPad>(null);
@@ -260,21 +239,18 @@ export default function Responsive130UForm({
     return ref.current.getCanvas().toDataURL("image/png");
   };
 
-  const updateSignatureInState = (id: string) => {
+  const updateSignature = (id: string) => {
     const sigData = getSignatureData(id);
-    setFormState(prev => ({ ...prev, [id]: sigData || "" }));
+    const updated = { ...initialValues, [id]: sigData || "" };
+    onChange?.(updated);
   };
-
-  useEffect(() => {
-    onChange?.(formState);
-  }, [formState, onChange]);
 
   const handleChange = (id: string, value: string | boolean) => {
-    setFormState(prev => ({ ...prev, [id]: value }));
+    const updated = { ...initialValues, [id]: value };
+    onChange?.(updated);
   };
 
-  const renderField = (f: FieldDef) => {
-    // Checkbox handling
+   const renderField = (f: FieldDef) => {
     if (f.type === "checkbox") {
       return (
         <div key={f.id} className="form-field">
@@ -282,7 +258,7 @@ export default function Responsive130UForm({
             <input
               id={f.id}
               type="checkbox"
-              checked={Boolean(formState[f.id])}
+              checked={!!initialValues[f.id]}
               onChange={(e) => handleChange(f.id, e.target.checked)}
               className="form-checkbox"
             />
@@ -295,7 +271,6 @@ export default function Responsive130UForm({
       );
     }
 
-    // Signature handling
     if (f.type === "signature") {
       const ref = getSigRef(f.id);
       return (
@@ -314,11 +289,11 @@ export default function Responsive130UForm({
                 className: "signature-canvas",
                 style: { border: "1px solid #ccc", borderRadius: "4px" }
               }}
-              onEnd={() => updateSignatureInState(f.id)}
+              onEnd={() => updateSignature(f.id)}
             />
             <button
               type="button"
-              onClick={() => { ref?.current?.clear(); updateSignatureInState(f.id); }}
+              onClick={() => { ref?.current?.clear(); updateSignature(f.id); }}
               className="clear-signature-btn"
             >
               Clear
@@ -328,7 +303,7 @@ export default function Responsive130UForm({
       );
     }
 
-    // State dropdown handling
+    // Handle dropdowns for state fields
     if (STATE_FIELDS.has(f.id)) {
       return (
         <div key={f.id} className="form-field">
@@ -338,7 +313,7 @@ export default function Responsive130UForm({
           </label>
           <select
             id={f.id}
-            value={String(formState[f.id] || "")}
+            value={String(initialValues[f.id] || "")}
             onChange={(e) => handleChange(f.id, e.target.value)}
             className="form-input"
           >
@@ -351,7 +326,7 @@ export default function Responsive130UForm({
       );
     }
 
-    // Default text input handling
+    // Handle text inputs
     return (
       <div key={f.id} className="form-field">
         <label htmlFor={f.id} className="form-label">
@@ -361,7 +336,7 @@ export default function Responsive130UForm({
         <input
           id={f.id}
           type="text"
-          value={String(formState[f.id] || "")}
+          value={String(initialValues[f.id] || "")}
           onChange={(e) => handleChange(f.id, e.target.value)}
           className="form-input"
         />

@@ -9,6 +9,8 @@ import "../styles/ocr.css";
 import CameraCapture from "../components/CameraCapture";
 
 interface OcrData {
+  first_name: string;
+  last_name: string;
   name: string;
   address: string;
   dlNumber: string;
@@ -26,6 +28,8 @@ export default function OCRPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [ocrData, setOcrData] = useState<OcrData>({
+    first_name: "",
+    last_name: "",
     name: "",
     address: "",
     dlNumber: "",
@@ -46,28 +50,30 @@ export default function OCRPage() {
   const [showCamera, setShowCamera] = useState(false);
 
   // Load latest OCR from backend
-  useEffect(() => {
-    const fetchLatest = async () => {
-      if (!userId) return;
-      try {
-        const data = await getLatestOCR(userId);
-        if (data && data.dlNumber) {
-          setOcrData({
-            name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
-            address: data.address,
-            dlNumber: data.dlNumber,
-            state: data.state,
-            street_address: data.street_address,
-            zip_code: data.zip_code,
-            city: data.city,
-          });
-        }
-      } catch {
-        console.warn("No previous OCR found or fetch failed.");
-      }
-    };
-    fetchLatest();
-  }, [userId]);
+  // useEffect(() => {
+  //   const fetchLatest = async () => {
+  //     if (!userId) return;
+  //     try {
+  //       const data = await getLatestOCR(userId);
+  //       if (data && data.dlNumber) {
+  //         setOcrData({
+  //           first_name: data.first_name,
+  //           last_name: data.last_name,
+  //           name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
+  //           address: data.address,
+  //           dlNumber: data.dlNumber,
+  //           state: data.state,
+  //           street_address: data.street_address,
+  //           zip_code: data.zip_code,
+  //           city: data.city,
+  //         });
+  //       }
+  //     } catch {
+  //       console.warn("No previous OCR found or fetch failed.");
+  //     }
+  //   };
+  //   fetchLatest();
+  // }, [userId]);
 
   // File validation
   const validateFile = (file: File): boolean => {
@@ -127,6 +133,8 @@ export default function OCRPage() {
     try {
       const data = await postOCR(file, userId);
       setOcrData({
+        first_name: data.first_name,
+        last_name: data.last_name,
         name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
         address: data.address,
         dlNumber: data.dlNumber,
@@ -167,6 +175,8 @@ export default function OCRPage() {
     }
     setFilePreview(null);
     setOcrData({
+      first_name: "",
+      last_name: "",
       name: "",
       address: "",
       dlNumber: "",
@@ -250,7 +260,45 @@ export default function OCRPage() {
           >
             📷 Take a Photo
           </button>
+
+          <button
+            className="btn secondary"
+            disabled={!userId || loading}
+            onClick={async () => {
+              if (!userId) {
+                setError("User ID is missing.");
+                return;
+              }
+              try {
+                setLoading(true);
+                const data = await getLatestOCR(userId);
+                if (data && data.dlNumber) {
+                  setOcrData({
+                    first_name: data.first_name,
+                    last_name: data.last_name,
+                    name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
+                    address: data.address,
+                    dlNumber: data.dlNumber,
+                    state: data.state,
+                    street_address: data.street_address,
+                    zip_code: data.zip_code,
+                    city: data.city,
+                  });
+                } else {
+                  setError("No previous OCR data found.");
+                }
+              } catch (err: any) {
+                setError(err.message);
+              } finally {
+                setLoading(false);
+              }
+            }}
+          >
+            ⟳ Fetch Data
+          </button>
+
         </div>
+
 
         {loading && <p className="status-text">Running OCR, please wait…</p>}
         {error && <p className="status-text error">{error}</p>}

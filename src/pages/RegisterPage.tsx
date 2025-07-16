@@ -55,8 +55,8 @@ export default function RegisterPage() {
           placeholder="Confirm your password"
           title="Confirm Password"
         />
-
-        <button type="submit" disabled={!canSubmit || loading}>
+        {/* disabled={!canSubmit || loading} */}
+        <button type="submit" >
           Register
         </button>
 
