@@ -1,5 +1,5 @@
 // src/pages/SubmitPage.tsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function SubmitPage() {

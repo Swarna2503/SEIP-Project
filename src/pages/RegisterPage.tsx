@@ -5,13 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import '../styles/login.css';
 
 export default function RegisterPage() {
-  const { register, loading, error } = useAuth();
+  const { register, error } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const navigate = useNavigate();
 
-  const canSubmit = email.trim() !== '' && password.trim() !== '' && password === confirm;
+  // const canSubmit = email.trim() !== '' && password.trim() !== '' && password === confirm;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

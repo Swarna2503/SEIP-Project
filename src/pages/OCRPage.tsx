@@ -1,6 +1,6 @@
 // src/pages/OCRPage.tsx
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import type { DragEvent, ChangeEvent } from "react";
 import { postOCR, getLatestOCR } from "../apis/driver_license";
 import { useAuth } from "../hooks/auth";
