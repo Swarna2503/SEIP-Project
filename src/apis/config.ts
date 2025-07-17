@@ -8,16 +8,12 @@ function isBrowser(): boolean {
 async function detectAPIBaseURL(): Promise<string> {
   if (cachedAPIBaseURL) return cachedAPIBaseURL;
 
-  const localURL = "http://127.0.0.1:8000";
-  if (isBrowser()) {
-    try {
-      const res = await fetch(`${localURL}/`, { method: "GET" });
-      if (res.ok) {
-        cachedAPIBaseURL = localURL;
-        console.log("✅ Using local backend:", cachedAPIBaseURL);
-        return cachedAPIBaseURL;
-      }
-    } catch {}
+  const isLocalhost = typeof window !== "undefined" && window.location.hostname === "localhost";
+
+  if (isLocalhost) {
+    cachedAPIBaseURL = "http://127.0.0.1:8000";
+    console.log("🔧 Local dev: Using local backend:", cachedAPIBaseURL);
+    return cachedAPIBaseURL;
   }
 
   cachedAPIBaseURL = import.meta.env.VITE_API_BASE_URL || "";
