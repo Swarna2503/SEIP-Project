@@ -19,14 +19,15 @@ jobs:
     - name: Build frontend
       run: npm run build
 
-    - name: Upload build to EC2
-      uses: appleboy/scp-action@v0.1.3
+    - name: Clean old files on EC2
+      uses: appleboy/ssh-action@v0.1.6
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_FRONTEND_KEY }}
         script: |
           rm -rf /home/ec2-user/frontend/*
+          mkdir -p /home/ec2-user/frontend/
 
     - name: Upload build to EC2
       uses: appleboy/scp-action@v0.1.3
