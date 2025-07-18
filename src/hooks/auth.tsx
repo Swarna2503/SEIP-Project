@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { login as loginApi } from "../apis/login";
 import { register as registerApi } from "../apis/register";
+import { getAPIBaseURL } from "../apis/config"; 
 
 interface User {
   user_id: string;
@@ -33,16 +34,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // initially check if user is logged in
     setLoading(true);
-    fetch("http://127.0.0.1:8000/profile", { credentials: "include" })
-      .then(res => {
-        if (!res.ok) throw new Error("未登录");
-        return res.json();
-      })
-      .then((data: User) => setUser(data))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    getAPIBaseURL().then((baseURL) => {
+      fetch(`${baseURL}/profile`, { credentials: "include" })
+        .then(res => {
+          if (!res.ok) throw new Error("未登录");
+          return res.json();
+        })
+        .then((data: User) => setUser(data))
+        .catch(() => setUser(null))
+        .finally(() => setLoading(false));
+    });
   }, [navigate]);
 
   async function login(email: string, password: string) {
