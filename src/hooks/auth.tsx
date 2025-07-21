@@ -9,6 +9,7 @@ import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { login as loginApi } from "../apis/login";
 import { register as registerApi } from "../apis/register";
+import { requestPasswordReset, resetPassword as resetPasswordAPI } from "../apis/reset_password";
 import { getAPIBaseURL } from "../apis/config"; 
 
 interface User {
@@ -80,25 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Mock password reset email function
-  async function sendPasswordResetEmail(email: string) {
+// new added sendPasswordResetEmail function
+async function sendPasswordResetEmail(email: string) {
     setLoading(true);
     setError(null);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
     try {
-      // Mock validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        throw new Error("Invalid email format");
-      }
-      
-      console.log(`[MOCK] Password reset email sent to: ${email}`);
-      // In a real app, we would navigate to a confirmation page
-      // For mock purposes, we'll just show a success message
-      navigate('/reset-password', { state: { email } });
+      const { ok, data } = await requestPasswordReset(email);
+      if (!ok) throw new Error(data.detail || "Failed to send reset link");
+      // keep the message in state to show it in the UI
     } catch (err: any) {
       setError(err.message);
       throw err;
@@ -107,26 +97,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Mock password reset function
+  // new added resetPassword function
   async function resetPassword(token: string, newPassword: string) {
     setLoading(true);
     setError(null);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
     try {
-      // Mock validation
-      if (newPassword.length < 8) {
-        throw new Error("Password must be at least 8 characters");
-      }
-      
-      console.log(`[MOCK] Password reset for token: ${token}`);
-      console.log(`[MOCK] New password set: ${newPassword}`);
-      
-      // Simulate successful reset
+      console.log("[DEBUG] calling resetPassword API with:", token, newPassword);
+      const { ok, data } = await resetPasswordAPI(token, newPassword, newPassword);
+      console.log("[DEBUG] resetPassword response:", ok, data);
+      if (!ok) throw new Error(data.detail || "Password reset failed");
       navigate('/login', { state: { message: "Password reset successfully!" } });
     } catch (err: any) {
+      console.error("[DEBUG] resetPassword error:", err);
       setError(err.message);
       throw err;
     } finally {

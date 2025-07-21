@@ -12,6 +12,8 @@ export default function ForgotPasswordPage() {
   const navigate = useNavigate();
   const { sendPasswordResetEmail } = useAuth();
 
+
+
   const validateEmail = (email: string) => {
     if (!email.trim()) return "Email is required";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
