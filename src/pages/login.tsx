@@ -1,20 +1,18 @@
-import React, { useState, useEffect } from "react";
+// src/pages/LoginPage.tsx
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/auth";
 import "../styles/login.css";
 
 export default function LoginPage() {
-  const { login, register, loading, error } = useAuth();
+  const { login, loading, error } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [errors, setErrors] = useState({
-    email: "",
-    password: "",
-    name: ""
-  });
+  const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState({ email: "", password: "" });
+  const navigate = useNavigate();
 
-  // Validation functions
+  // check if the email and password are valid
   const validateEmail = (email: string) => {
     if (!email.trim()) return "Email is required";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,124 +26,94 @@ export default function LoginPage() {
     return "";
   };
 
-  const validateName = (name: string) => {
-    if (isRegistering) {
-      if (!name.trim()) return "Name is required";
-      if (name.trim().length < 2) return "Name must be at least 2 characters";
-    }
-    return "";
-  };
+  // every time email or password changes, validate them
+  // useEffect(() => {
+  //   setErrors({
+  //     email: validateEmail(email),
+  //     password: validatePassword(password),
+  //   });
+  // }, [email, password]);
 
-  // Validate fields on change
-  useEffect(() => {
-    setErrors({
-      email: validateEmail(email),
-      password: validatePassword(password),
-      name: validateName(name)
-    });
-  }, [email, password, name, isRegistering]);
-
-  // Check if form is valid
-  const isFormValid = () => {
-    const emailValid = !validateEmail(email);
-    const passwordValid = !validatePassword(password);
-    const nameValid = isRegistering ? !validateName(name) : true;
-    
-    return emailValid && passwordValid && nameValid;
-  };
+  const canSubmit =
+    email.trim() !== "" &&
+    password.trim() !== "" &&
+    !errors.email &&
+    !errors.password;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isFormValid()) return;
 
+    setSubmitted(true); 
+    
+    // generate new validation results
+    const newErrors = {
+      email: validateEmail(email),
+      password: validatePassword(password),
+    };
+    // write the new errors to state
+    setErrors(newErrors);
+    // if there are errors, do not submit
+    if (newErrors.email || newErrors.password) {
+      console.log("Validation errors:", newErrors);
+      return;
+    }
+    
+    if (!canSubmit) return;
     try {
-      if (isRegistering) {
-        await register(email, password, name);
-      } else {
-        await login(email, password);
-      }
+      await login(email, password);
+
+      // print the cookies to console after login
+      console.log("🍪 document.cookie after login:", document.cookie);
     } catch {
-      // error handled in useAuth hook
+      // errors handled in useAuth
     }
   };
-
-  const toggleFormMode = () => {
-    setIsRegistering(!isRegistering);
-    setEmail("");
-    setPassword("");
-    setName("");
-    setErrors({ email: "", password: "", name: "" });
-  };
+  console.log("canSubmit:", canSubmit, email, password, errors);
 
   return (
     <div className="login-page">
       <form className="login-card" onSubmit={handleSubmit}>
-        <h2>{isRegistering ? "Create Account" : "Sign In"}</h2>
-        
+        <h2>Sign In</h2>
         {error && <p className="error-text">{error}</p>}
-
-        {isRegistering && (
-          <>
-            <label htmlFor="name">Full Name</label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              autoComplete="name"
-              placeholder="John Doe"
-              onChange={(e) => setName(e.target.value)}
-              disabled={loading}
-              className={errors.name ? "input-error" : ""}
-            />
-            {errors.name && <p className="error-text">{errors.name}</p>}
-          </>
-        )}
 
         <label htmlFor="email">Email Address</label>
         <input
           id="email"
           type="email"
           value={email}
-          autoComplete="username"
-          placeholder="you@example.com"
           onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
-          className={errors.email ? "input-error" : ""}
+          className={submitted && errors.email ? "input-error" : ""}
         />
-        {errors.email && <p className="error-text">{errors.email}</p>}
+        {/* only show the error message after submission */}
+        {submitted && errors.email && <p className="error-text">{errors.email}</p>}
 
         <label htmlFor="password">Password</label>
         <input
           id="password"
           type="password"
           value={password}
-          autoComplete={isRegistering ? "new-password" : "current-password"}
           placeholder="••••••••"
           onChange={(e) => setPassword(e.target.value)}
           disabled={loading}
-          className={errors.password ? "input-error" : ""}
+          className={submitted && errors.password ? "input-error" : ""}
         />
-        {errors.password && <p className="error-text">{errors.password}</p>}
-
-        <button 
-          type="submit" 
-          disabled={!isFormValid() || loading}
-        >
-          {isRegistering ? "Create Account" : "Continue →"}
+        {submitted && errors.password && <p className="error-text">{errors.password}</p>}
+        {/* disabled={!canSubmit || loading} */}
+        <button type="submit" >
+          Continue →
         </button>
 
-        <div className="form-toggle">
-          <span>
-            {isRegistering ? "Already have an account?" : "Don't have an account?"}
-          </span>
-          <button 
-            type="button" 
-            onClick={toggleFormMode}
+        <p className="form-toggle-text">
+          Don't have an account?{" "}
+          <button
+            type="button"
             className="toggle-button"
+            onClick={() => navigate("/register")}
           >
-            {isRegistering ? "Sign In" : "Register"}
+            Register
           </button>
-        </div>
+        </p>
       </form>
     </div>
   );

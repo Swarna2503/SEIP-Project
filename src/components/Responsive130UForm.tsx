@@ -1,26 +1,23 @@
 import { useState, useEffect, useRef } from "react";
 import SignatureCanvas from "react-signature-canvas";
-import { STATE_ABBREVIATIONS, STATE_NAMES } from '../utils/stateAbbreviations';
+import { STATE_ABBREVIATIONS} from '../utils/stateAbbreviations';
+
 
 interface FieldDef {
   id: string;
   label: string;
   type: "text" | "checkbox" | "signature" | "dropdown";
   required?: boolean;
-  validation?: (value: any, formState: Record<string, any>) => string | null;
-  visibleCondition?: (formState: Record<string, any>) => boolean;
 }
 
 export interface Responsive130UFormProps {
-  onChange?: (
-    state: Record<string, string | boolean>,
-    isValid: boolean,
-    errors: Record<string, string>
-  ) => void;
+  /** Called on every change with the full form state */
+  onChange?: (state: Record<string, string | boolean>) => void;
+  /** CSS class to apply to each section wrapper */
   sectionClass?: string;
+  /** CSS class to apply to each section's inner grid container */
   gridClass?: string;
   initialValues?: Record<string, string | boolean>;
-  showAllErrors?: boolean;
 }
 
 const STATE_FIELDS = new Set([
@@ -34,619 +31,152 @@ const STATE_FIELDS = new Set([
   "residentPreviousState"
 ]);
 
-const tradeInRequired = (value: string, formState: Record<string, any>) => {
-  if (!formState.tradeIn) return null;
-  if (!value) return "This field is required";
-  return null;
-};
-
-const validators = {
-  required: (value: any) => !value ? "This field is required" : null,
-  vin: (value: string) => {
-    if (!value) return "VIN is required";
-    if (!/^[A-Z0-9]{17}$/i.test(value)) return "VIN must be exactly 17 alphanumeric characters";
-    return null;
-  },
-  year: (value: string) => {
-    if (!value) return "Year is required";
-    const yearNum = parseInt(value, 10);
-    const currentYear = new Date().getFullYear();
-    if (isNaN(yearNum)) return "Must be a valid number";
-    if (yearNum < 1886 || yearNum > currentYear + 1)
-      return `Must be between 1886 and ${currentYear + 1}`;
-    return null;
-  },
-  texasLicense: (value: string) => {
-    if (!value) return "Texas License Plate is required";
-    return null;
-  },
-  odometerOptional: (value: string) => {
-    if (value && !/^\d+$/.test(value)) return "Must be a whole number";
-    return null;
-  },
-  zip: (value: string) => {
-    if (!value) return "ZIP code is required";
-    if (!/^\d{5}$/.test(value)) return "Must be a 5-digit ZIP code";
-    return null;
-  },
-  email: (value: string, formState: Record<string, any>) => {
-    if (formState.emailConsent && !value) return "Email is required when consent is given";
-    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Invalid email format";
-    return null;
-  },
-  phone: (value: string) => {
-    if (value && !/^\d{10}$/.test(value)) return "Must be 10-digit phone number";
-    return null;
-  },
-  date: (value: string) => {
-    if (value && !/^(0[1-9]|1[0-2])\/\d{2}\/\d{4}$/.test(value))
-      return "Must be in MM/DD/YYYY format";
-    return null;
-  },
-  signatureBlock: (name: string, date: string, formState: Record<string, any>) => {
-    const nameValue = formState[name];
-    const dateValue = formState[date];
-    if ((nameValue && !dateValue) || (!nameValue && dateValue))
-      return "Both name and date are required if either is filled";
-    return null;
-  },
-  otherReason: (value: string, formState: Record<string, any>) => {
-    if (formState.otherReason && !value) return "Other reason is required";
-    return null;
-  },
-  passportIssuer: (value: string, formState: Record<string, any>) => {
-    if (formState.passport && !value) return "Passport issuer is required";
-    return null;
-  },
-  feinEin: (value: string, formState: Record<string, any>) => {
-    if (formState.business && !value) return "FEIN/EIN is required for businesses";
-    return null;
-  },
-  numeric: (value: string) => {
-    if (value && !/^\d*\.?\d+$/.test(value)) return "Must be a number";
-    return null;
-  },
-  atLeastOne: (values: boolean[]) => {
-    if (!values.some(v => v)) return "At least one must be selected";
-    return null;
-  }
-};
-
-const fields: FieldDef[] = [
+// Updated fields array with signature type instead of image
+export const fields: FieldDef[] = [
   // 0–3: "Applying for" checkboxes
-  { 
-    id: "titleRegistration",           
-    label: "Title & Registration",                  
-    type: "checkbox",
-    validation: (_, formState) => validators.atLeastOne([
-      formState.titleRegistration, 
-      formState.titleOnly, 
-      formState.registrationPurposesOnly, 
-      formState.nonTitleRegistration
-    ])
-  },
-  { id: "titleOnly", label: "Title Only", type: "checkbox" },
-  { id: "registrationPurposesOnly", label: "Registration Purposes Only", type: "checkbox" },
-  { id: "nonTitleRegistration", label: "Nontitle Registration", type: "checkbox" },
+  { id: "titleRegistration",           label: "Title & Registration",                  type: "checkbox" },
+  { id: "titleOnly",                   label: "Title Only",                              type: "checkbox" },
+  { id: "registrationPurposesOnly",    label: "Registration Purposes Only",               type: "checkbox" },
+  { id: "nonTitleRegistration",        label: "Nontitle Registration",                   type: "checkbox" },
 
   // 4–6: "Corrected title or registration, check reason"
-  { 
-    id: "vehicleDescription",          
-    label: "Vehicle Description",                     
-    type: "checkbox",
-    validation: (_, formState) => validators.atLeastOne([
-      formState.vehicleDescription, 
-      formState.addRemoveLien, 
-      formState.otherReason
-    ])
-  },
-  { id: "addRemoveLien", label: "Add/Remove Lien", type: "checkbox" },
-  { id: "otherReason", label: "Other (specify below)", type: "checkbox" },
+  { id: "vehicleDescription",          label: "Vehicle Description",                     type: "checkbox" },
+  { id: "addRemoveLien",               label: "Add/Remove Lien",                        type: "checkbox" },
+  { id: "otherReason",                 label: "Other (specify below)",                  type: "checkbox" },
 
   // 7: "Other reason" free-form
-  { 
-    id: "otherReasonText",             
-    label: "Other Reason For Correction",             
-    type: "text",
-    validation: validators.otherReason,
-    visibleCondition: formState => formState.otherReason
-  },
+  { id: "otherReasonText",             label: "Other Reason For Correction",             type: "text" },
 
-  // 8–14: Vehicle details - ONLY VIN AND YEAR REQUIRED
-  { 
-    id: "vehicleIdentificationNumber", 
-    label: "1. Vehicle Identification Number",        
-    type: "text",
-    required: true,
-    validation: validators.vin
-  },
-  { 
-    id: "vehicleYear",                 
-    label: "2. Year",                                 
-    type: "text",
-    required: true,
-    validation: validators.year
-  },
-  { 
-    id: "vehicleMake",                 
-    label: "3. Make",                                 
-    type: "text"
-  },
-  { 
-    id: "vehicleBodyStyle",            
-    label: "4. Body Style",                           
-    type: "text"
-  },
-  { 
-    id: "vehicleModel",                
-    label: "5. Model",                                
-    type: "text"
-  },
-  { 
-    id: "majorColor",                  
-    label: "6. Major Color",                          
-    type: "text"
-  },
-  { 
-    id: "minorColor",                  
-    label: "7. Minor Color",                          
-    type: "text"
-  },
+  // 8–14: Vehicle details
+  { id: "vehicleIdentificationNumber", label: "1. Vehicle Identification Number",        type: "text" },
+  { id: "vehicleYear",                 label: "2. Year",                                 type: "text" },
+  { id: "vehicleMake",                 label: "3. Make",                                 type: "text" },
+  { id: "vehicleBodyStyle",            label: "4. Body Style",                           type: "text" },
+  { id: "vehicleModel",                label: "5. Model",                                type: "text" },
+  { id: "majorColor",                  label: "6. Major Color",                          type: "text" },
+  { id: "minorColor",                  label: "7. Minor Color",                          type: "text" },
 
-  //15-22: Odometer & Weights - TEXAS LICENSE REQUIRED, ODOMETER OPTIONAL
-  { 
-    id: "texasLicensePlate",          
-    label: "8. Texas License Plate No",                       
-    type: "text",
-    required: true,
-    validation: validators.texasLicense
-  },
-  { 
-    id: "odometerReading",            
-    label: "9. Odometer Reading (no tenths)",                 
-    type: "text",
-    validation: validators.odometerOptional
-  },
-  { id: "notActualMileage", label: "10.Not Actual", type: "checkbox" },
-  { id: "exceedsMechanicalLimits", label: "10.Exceeds Mechanical Limits", type: "checkbox" },
-  { id: "exemptMileage", label: "10.Exempt", type: "checkbox" },
-  { 
-    id: "emptyWeight",                
-    label: "11. Empty Weight",                                
-    type: "text",
-    validation: validators.numeric
-  },
-  { 
-    id: "carryingCapacity",           
-    label: "12. Carrying Capacity (if any)",                  
-    type: "text",
-    validation: validators.numeric
-  },
+  //15-22
+  { id: "texasLicensePlate",          label: "8. Texas License Plate No",                       type: "text" },
+  { id: "odometerReading",            label: "9. Odometer Reading (no tenths)",                 type: "text" },
+  { id: "notActualMileage",           label: "10.Not Actual",                                      type: "checkbox" },
+  { id: "exceedsMechanicalLimits",    label: "10.Exceeds Mechanical Limits",                       type: "checkbox" },
+  { id: "exemptMileage",              label: "10.Exempt",                                          type: "checkbox" },
+  { id: "emptyWeight",                label: "11. Empty Weight",                                type: "text" },
+  { id: "carryingCapacity",           label: "12. Carrying Capacity (if any)",                  type: "text" },
 
   //23-29
-  { 
-    id: "individual",                 
-    label: "13.Individual",                                      
-    type: "checkbox",
-    validation: (_, formState) => validators.atLeastOne([
-      formState.individual, 
-      formState.business, 
-      formState.government, 
-      formState.trust, 
-      formState.nonProfit
-    ])
-  },
-  { id: "business", label: "13.Business", type: "checkbox" },
-  { id: "government", label: "13.Government", type: "checkbox" },
-  { id: "trust", label: "13.Trust", type: "checkbox" },
-  { id: "nonProfit", label: "13.NonProfit", type: "checkbox" },
-  { 
-    id: "photoIdNumber",             
-    label: "14. Applicant Photo ID Number or FEIN/EIN",       
-    type: "text",
-    validation: (value, formState) => formState.business ? validators.required(value) : null
-  },
+  { id: "individual",                 label: "13.Individual",                                      type: "checkbox" },
+  { id: "business",                   label: "13.Business",                                        type: "checkbox" },
+  { id: "government",                 label: "13.Government",                                      type: "checkbox" },
+  { id: "trust",                      label: "13.Trust",                                           type: "checkbox" },
+  { id: "nonProfit",                  label: "13.NonProfit",                                       type: "checkbox" },
+  { id: "photoIdNumber",             label: "14. Applicant Photo ID Number or FEIN/EIN",       type: "text" },
 
-  // Identification
-  { 
-    id: "usDriverLicense",           
-    label: "15.U.S. Driver License/ID Card",                     
-    type: "checkbox",
-    validation: (_, formState) => validators.atLeastOne([
-      formState.usDriverLicense, 
-      formState.passport, 
-      formState.uscisId, 
-      formState.natoId, 
-      formState.usMilitaryId,
-      formState.militaryStatusId,
-      formState.usDeptStateId,
-      formState.usDeptHomelandId
-    ])
-  },
-  { id: "stateOfId", label: "15.State of ID/DL", type: "dropdown" },
-  { id: "passport", label: "15.Passport", type: "checkbox" },
-  { 
-    id: "passportIssued",           
-    label: "15.Passport Issued",                                  
-    type: "text",
-    validation: validators.passportIssuer,
-    visibleCondition: formState => formState.passport
-  },
-  { id: "uscisId", label: "15.U.S. Citizenship & Immigration Services/DOJ ID", type: "checkbox" },
-  { id: "natoId", label: "15.NATO ID", type: "checkbox" },
-  { id: "usMilitaryId", label: "15.US Military ID", type: "checkbox" },
-  { id: "militaryStatusId", label: "15.Other Military Status of Forces Photo ID", type: "checkbox" },
-  { id: "usDeptStateId", label: "15.US Dept of State ID", type: "checkbox" },
-  { id: "usDeptHomelandId", label: "15.US Dept of Homeland Security ID", type: "checkbox" },
+  //
+  { id: "usDriverLicense",           label: "15.U.S. Driver License/ID Card",                     type: "checkbox" },
+  { id: "stateOfId",                 label: "15.State of ID/DL",                                  type: "dropdown" },
+  { id: "passport",                  label: "15.Passport",                                        type: "checkbox" },
+  { id: "passportIssued",           label: "15.Passport Issued",                                  type: "text" },
+  { id: "uscisId",                   label: "15.U.S. Citizenship & Immigration Services/DOJ ID",   type: "checkbox" },
+  { id: "natoId",                    label: "15.NATO ID",                                          type: "checkbox" },
+  { id: "usMilitaryId",             label: "15.US Military ID",                                   type: "checkbox" },
+  { id: "militaryStatusId",         label: "15.Other Military Status of Forces Photo ID",         type: "checkbox" },
+  { id: "usDeptStateId",            label: "15.US Dept of State ID",                              type: "checkbox" },
+  { id: "usDeptHomelandId",         label: "15.US Dept of Homeland Security ID",                  type: "checkbox" },
 
-  // Applicant name
-  { 
-    id: "applicantName",            
-    label: "16. Applicant First Name or Entity Name...",       
-    type: "text",
-    validation: validators.required
-  },
-  { id: "applicantMiddleName", label: "16.Applicant Middle Name", type: "text" },
-  { 
-    id: "applicantLastName",      
-    label: "16.Applicant Last Name",       
-    type: "text",
-    validation: validators.required
-  },
-  { id: "applicantSuffix", label: "16. Applicant Suffix", type: "text" },
+//
+  { id: "applicantName",            label: "16. Applicant First Name or Entity Name...",       type: "text" },
+  { id: "applicantMiddleName",      label: "16.Applicant Middle Name",       type: "text" },
+  { id: "applicantLastName",      label: "16.Applicant Last Name",       type: "text" },
+  { id: "applicantSuffix",            label: "16. Applicant Suffix",       type: "text" },
 
-  // Additional applicant
-  { id: "additionalApplicantName", label: "17. Additional Applicant First Name...", type: "text" },
-  { id: "additionalApplicantMiddleName", label: "17.Applicant Middle Name", type: "text" },
-  { id: "additionalApplicantLastName", label: "17.Applicant Last Name", type: "text" },
-  { id: "additionalApplicantSuffix", label: "17. Applicant Suffix", type: "text" },
+//
+  { id: "additionalApplicantName",  label: "17. Additional Applicant First Name...",           type: "text" },
+  { id: "additionalApplicantMiddleName",      label: "17.Applicant Middle Name",       type: "text" },
+  { id: "additionalApplicantLastName",      label: "17.Applicant Last Name",       type: "text" },
+  { id: "additionalApplicantSuffix",            label: "17. Applicant Suffix",       type: "text" },
 
-  // Address
-  { 
-    id: "applicantMailingAddress",         
-    label: "18. Applicant Mailing Address",     
-    type: "text",
-    validation: validators.required
-  },
-  { 
-    id: "applicantCity",         
-    label: "18.Applicant City",     
-    type: "text",
-    validation: validators.required
-  },
-  { 
-    id: "applicantState",         
-    label: "18.Applicant State",     
-    type: "dropdown",
-    validation: validators.required
-  },
-  { 
-    id: "applicantZip",         
-    label: "18.Applicant Zip",     
-    type: "text",
-    validation: validators.zip
-  },
-  { 
-    id: "applicantCounty",          
-    label: "19. Applicant County of Residence",                
-    type: "text",
-    validation: validators.required
-  },
-  
-  // Previous owner
-  { 
-    id: "previousOwner",            
-    label: "20. Previous Owner Name ",        
-    type: "text",
-    validation: validators.required
-  },
-  { 
-    id: "previousCity",            
-    label: "20.Previous Owner City",        
-    type: "text",
-    validation: validators.required
-  },
-  { 
-    id: "previousOwnerState",            
-    label: "20.Previous Owner State ",        
-    type: "dropdown",
-    validation: validators.required
-  },
-  { id: "dealerGDN", label: "21. Dealer GDN (if applicable)", type: "text" },
-  { id: "unitNumber", label: "22. Unit Number (if applicable)", type: "text" },
-  
-  // Renewal
-  { id: "renewalRecipientFirstName", label: "23. Renewal Recipient First Name", type: "text" },
-  { id: "renewalRecipientMiddleName", label: "23.Renewal Recipient Middle Name", type: "text" },
-  { id: "renewalRecipientLastName", label: "23.Renewal Recipient Last Name", type: "text" },
-  { id: "renewalRecipientSuffix", label: "23.Renewal Recipient Suffix", type: "text" },
-  
-  // Renewal address
-  { 
-    id: "renewalMailingAddress",           
-    label: "24. Renewal Notice Mailing Address",            
-    type: "text",
-    validation: validators.required
-  },
-  { 
-    id: "renewalCity",           
-    label: "24.Renewal Notice City",            
-    type: "text",
-    validation: validators.required
-  },
-  { 
-    id: "renewalState",           
-    label: "24.Renewal Notice Mailing State",            
-    type: "dropdown",
-    validation: validators.required
-  },
-  { 
-    id: "renewalZip",           
-    label: "24.Renewal Notice Mailing Zip",            
-    type: "text",
-    validation: validators.zip
-  },
-  
-  // Contact
-  { 
-    id: "phoneNumber",              
-    label: "25. Applicant Phone Number (optional)",            
-    type: "text",
-    validation: validators.phone
-  },
-  { 
-    id: "email",                    
-    label: "26. Email (optional)",                             
-    type: "text",
-    validation: validators.email
-  },
-  { id: "emailConsent", label: "27.Yes Provide Email in 26", type: "checkbox" },
-  { id: "attachVTR216", label: "28.Yes Attach Form VTR-216", type: "checkbox" },
-  
-  // Vehicle location
-  { id: "vehicleLocation", label: "29.Vehicle Location Address if different", type: "text" },
-  { id: "vehicleLocationCity", label: "29.Vehicle Location City", type: "text" },
-  { id: "vehicalLocationState", label: "29.Vehicle Location State", type: "dropdown" },
-  { id: "vehicleLocationZip", label: "29.Vehicle Location Zip", type: "text" },
-  
-  // Lien
-  { id: "attachVTR267", label: "30.Yes Attach Form VTR-267", type: "checkbox" },
-  { id: "noElectronicTitle", label: "31.Yes Cannot check 30", type: "checkbox" },
-  { id: "lienholderId", label: "32. Certified/eTitle Lienholder ID Number", type: "text" },
-  { 
-    id: "firstLienDate",            
-    label: "33. First Lien Date (if any)",                     
-    type: "text",
-    validation: validators.date
-  },
-  
-  // Lienholder info
-  { 
-    id: "lienholderNameAddress",    
-    label: "34.First Lienholder Name",     
-    type: "text",
-    visibleCondition: formState => formState.addRemoveLien,
-    validation: validators.required
-  },
-  { 
-    id: "lienholderMailingAddress",    
-    label: "34.First Lienholder Mailing Address",     
-    type: "text",
-    visibleCondition: formState => formState.addRemoveLien,
-    validation: validators.required
-  },
-  { 
-    id: "lienholderCity",    
-    label: "34.First Lienholder City",     
-    type: "text",
-    visibleCondition: formState => formState.addRemoveLien,
-    validation: validators.required
-  },
-  { 
-    id: "FirstLienholderState",    
-    label: "34.First Lienholder State",     
-    type: "dropdown",
-    visibleCondition: formState => formState.addRemoveLien,
-    validation: validators.required
-  },
-  { 
-    id: "lienholderZip",    
-    label: "34.First Lienholder Zip",     
-    type: "text",
-    visibleCondition: formState => formState.addRemoveLien,
-    validation: validators.zip
-  },
-  
-  // Dealership
-  { id: "rentalPermit", label: "35.I Hold Motor Vehicle Retailer (Rental) Permit Number", type: "checkbox" },
-  { id: "permitNumber", label: "35.Permit Number", type: "text" },
-  { id: "dealerOrLessor", label: "35.Yes, I am a dealer or lessor that qualifies...", type: "checkbox" },
-  { id: "gdnOrLessorNumber", label: "35.GDN or Lessor Number", type: "text" },
-  
-  // Trade-in
-  { id: "tradeIn", label: "36.Trade-in (if any)", type: "checkbox" },
-  {
-    id: "tradeInYear",
-    label: "36.Trade-In Year",
-    type: "text",
-    validation: tradeInRequired,
-    visibleCondition: formState => formState.tradeIn
-  },
-  {
-    id: "tradeInMake",
-    label: "36.Trade-In Make",
-    type: "text",
-    validation: tradeInRequired,
-    visibleCondition: formState => formState.tradeIn
-  },
-  {
-    id: "tradeInVin",
-    label: "36.Trade-In Vehicle Identification Number",
-    type: "text",
-    validation: tradeInRequired,
-    visibleCondition: formState => formState.tradeIn
-  },
-  { id: "additionalTradeIns", label: "37.Additional Trade-ins", type: "checkbox" },
-  
-  // Sales tax
-  { id: "salesAndUseTax", label: "38.Sales and Use Tax", type: "checkbox" },
-  { 
-    id: "rebateAmount",             
-    label: "38.a.Rebate Amount",                                    
-    type: "text",
-    validation: (value, formState) => formState.salesAndUseTax ? validators.numeric(value) : null,
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "salesPriceMinusRebate",    
-    label: "38.a.Sales Price Minus Rebate Amount",                  
-    type: "text",
-    validation: (value, formState) => formState.salesAndUseTax ? validators.numeric(value) : null,
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "tradeInAmount",            
-    label: "38.b.Trade In Amount",                                  
-    type: "text",
-    validation: (value, formState) => formState.salesAndUseTax ? validators.numeric(value) : null,
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "fmvDeduction",             
-    label: "38.c.Fair Market Value Deduction",                      
-    type: "text",
-    validation: (value, formState) => formState.salesAndUseTax ? validators.numeric(value) : null,
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "taxableAmount",            
-    label: "38.d.Taxable Amount",                                   
-    type: "text",
-    validation: (value, formState) => formState.salesAndUseTax ? validators.numeric(value) : null,
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "taxOnTaxableAmount",       
-    label: "38.e.6.25% Tax on Taxable Amount",                      
-    type: "text",
-    validation: (value, formState) => formState.salesAndUseTax ? validators.numeric(value) : null,
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "penalty5Percent",          
-    label: "38.f.Late Tax Payment Penalty of 5%",                   
-    type: "checkbox",
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "penalty10Percent",         
-    label: "38.f.Late Tax Payment Penalty of 10%",                  
-    type: "checkbox",
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "penaltyAmount",            
-    label: "38.g.Late Tax Payment Penalty Amount",                  
-    type: "text",
-    validation: (value, formState) => (formState.penalty5Percent || formState.penalty10Percent) ? validators.numeric(value) : null,
-    visibleCondition: formState => formState.salesAndUseTax && (formState.penalty5Percent || formState.penalty10Percent)
-  },
-  { 
-    id: "taxPaidToState",         
-    label: "38.g.State Taxes Were Paid To",                         
-    type: "dropdown",
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "amountTaxesPaid",          
-    label: "38.g.Amount of Taxes Paid to Previous State",           
-    type: "text",
-    validation: (value, formState) => formState.salesAndUseTax ? validators.numeric(value) : null,
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "amountDue",                
-    label: "38.h.Amount of Tax and Penalty Due",                    
-    type: "text",
-    validation: (value, formState) => formState.salesAndUseTax ? validators.numeric(value) : null,
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "newResidentTax",           
-    label: "$90 New Resident Tax",                             
-    type: "checkbox",
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "residentPreviousState",    
-    label: "Resident's previous state",                        
-    type: "dropdown",
-    validation: (value, formState) => formState.newResidentTax ? validators.required(value) : null,
-    visibleCondition: formState => formState.salesAndUseTax && formState.newResidentTax
-  },
-  { 
-    id: "evenTradeTax",             
-    label: "$5 Even Trade Tax",                                
-    type: "checkbox",
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "giftTax",                  
-    label: "$10 Gift Tax Attach Comptroller Form 14-317",      
-    type: "checkbox",
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "salvageFee",               
-    label: "$65 Rebuilt Salvage Fee",                          
-    type: "checkbox",
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "emissionsFee25",           
-    label: "2.5% Emissions Fee",                               
-    type: "text",
-    validation: validators.numeric,
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "emissionsFee25Diesel",     
-    label: "2.5% Emissions Fee Diesel Vehicles 1996...",       
-    type: "checkbox",
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "emissionsFee1",            
-    label: "1% Emissions Fee",                                 
-    type: "text",
-    validation: validators.numeric,
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "emissionsFee1Diesel",      
-    label: "1% Emissions Fee Diesel Vehicles 1997...",         
-    type: "checkbox",
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "taxExemptionReason",       
-    label: "Sales Tax Exemption Reason",                       
-    type: "text",
-    validation: (value, formState) => formState.taxExemption ? validators.required(value) : null,
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "taxExemption",           
-    label: "Exemption claimed under the Motor vehicle Sales and Use Tax Law because:",
-    type: "checkbox",
-    visibleCondition: formState => formState.salesAndUseTax
-  },
-  { 
-    id: "applicationFee",           
-    label: "$28 or $33 Application Fee for Texas Title",       
-    type: "checkbox",
-    visibleCondition: formState => formState.salesAndUseTax
-  },
+// 18
+  { id: "applicantMailingAddress",         label: "18. Applicant Mailing Address",     type: "text" },
+  { id: "applicantCity",         label: "18.Applicant City",     type: "text" },
+  { id: "applicantState",         label: "18.Applicant State",     type: "dropdown" },
+  { id: "applicantZip",         label: "18.Applicant Zip",     type: "text" },
+  { id: "applicantCounty",          label: "19. Applicant County of Residence",                type: "text" },
+//
+  { id: "previousOwner",            label: "20. Previous Owner Name ",        type: "text" },
+  { id: "previousCity",            label: "20.Previous Owner City",        type: "text" },
+  { id: "previousOwnerState",            label: "20.Previous Owner State ",        type: "dropdown" },
+  { id: "dealerGDN",                label: "21. Dealer GDN (if applicable)",                   type: "text" },
+  { id: "unitNumber",               label: "22. Unit Number (if applicable)",                  type: "text" },
+//
+  { id: "renewalRecipientFirstName",         label: "23. Renewal Recipient First Name", type: "text" },
+  { id: "renewalRecipientMiddleName",         label: "23.Renewal Recipient Middle Name", type: "text" },
+  { id: "renewalRecipientLastName",         label: "23.Renewal Recipient Last Name", type: "text" },
+  { id: "renewalRecipientSuffix",         label: "23.Renewal Recipient Suffix", type: "text" },
+//
+  { id: "renewalMailingAddress",           label: "24. Renewal Notice Mailing Address",            type: "text" },
+  { id: "renewalCity",           label: "24.Renewal Notice City",            type: "text" },
+  { id: "renewalState",           label: "24.Renewal Notice Mailing State",            type: "dropdown" },
+  { id: "renewalZip",           label: "24.Renewal Notice Mailing Zip",            type: "text" },
+//
+  { id: "phoneNumber",              label: "25. Applicant Phone Number (optional)",            type: "text" },
+  { id: "email",                    label: "26. Email (optional)",                             type: "text" },
+  { id: "emailConsent",             label: "27.Yes Provide Email in 26",                          type: "checkbox" },
+  { id: "attachVTR216",             label: "28.Yes Attach Form VTR-216",                          type: "checkbox" },
+//
+  { id: "vehicleLocation",          label: "29.Vehicle Location Address if different",     type: "text" },
+  { id: "vehicleLocationCity",          label: "29.Vehicle Location City",     type: "text" },
+  { id: "vehicalLocationState",          label: "29.Vehicle Location State",     type: "dropdown" },
+  { id: "vehicleLocationZip",          label: "29.Vehicle Location Zip",     type: "text" },
+//
+  { id: "attachVTR267",             label: "30.Yes Attach Form VTR-267",                          type: "checkbox" },
+  { id: "noElectronicTitle",        label: "31.Yes Cannot check 30",                              type: "checkbox" },
+  { id: "lienholderId",             label: "32. Certified/eTitle Lienholder ID Number",        type: "text" },
+  { id: "firstLienDate",            label: "33. First Lien Date (if any)",                     type: "text" },
+//
+  { id: "lienholderNameAddress",    label: "34.First Lienholder Name",     type: "text" },
+  { id: "lienholderMailingAddress",    label: "34.First Lienholder Mailing Address",     type: "text" },
+  { id: "lienholderCity",    label: "34.First Lienholder City",     type: "text" },
+  { id: "FirstLienholderState",    label: "34.First Lienholder State",     type: "dropdown" },
+  { id: "lienholderZip",    label: "34.First Lienholder Zip",     type: "text" },
+//
+  { id: "rentalPermit",             label: "35.I Hold Motor Vehicle Retailer (Rental) Permit Number", type: "checkbox" },
+  { id: "permitNumber",             label: "35.Permit Number",                                    type: "text" },
+  { id: "dealerOrLessor",           label: "35.Yes, I am a dealer or lessor that qualifies...",    type: "checkbox" },
+  { id: "gdnOrLessorNumber",        label: "35.GDN or Lessor Number",                             type: "text" },
+//
+  { id: "tradeIn",                  label: "36.Trade-in (if any)",                                type: "checkbox" },
+  { id: "tradeInYear",           label: "36.Trade-In Year",                type: "text" },
+  { id: "tradeInMake",           label: "36.Trade-In Make",                type: "text" },
+  { id: "tradeInVin",           label: "36.Trade-In Vehicle Identification Number",                type: "text" },
+  { id: "additionalTradeIns",       label: "37.Additional Trade-ins",                             type: "checkbox" },
+//
+  { id: "salesAndUseTax",           label: "38.Sales and Use Tax",                                type: "checkbox" },
+  { id: "rebateAmount",             label: "38.a.Rebate Amount",                                    type: "text" },
+  { id: "salesPriceMinusRebate",    label: "38.a.Sales Price Minus Rebate Amount",                  type: "text" },
+  { id: "tradeInAmount",            label: "38.b.Trade In Amount",                                  type: "text" },
+  { id: "fmvDeduction",             label: "38.c.Fair Market Value Deduction",                      type: "text" },
+  { id: "taxableAmount",            label: "38.d.Taxable Amount",                                   type: "text" },
+  { id: "taxOnTaxableAmount",       label: "38.e.6.25% Tax on Taxable Amount",                      type: "text" },
+  { id: "penalty5Percent",          label: "38.f.Late Tax Payment Penalty of 5%",                   type: "checkbox" },
+  { id: "penalty10Percent",         label: "38.f.Late Tax Payment Penalty of 10%",                  type: "checkbox" },
+  { id: "penaltyAmount",            label: "38.g.Late Tax Payment Penalty Amount",                  type: "text" },
+  { id: "taxPaidToState",         label: "38.g.State Taxes Were Paid To",                         type: "dropdown" },
+  { id: "amountTaxesPaid",          label: "38.g.Amount of Taxes Paid to Previous State",           type: "text" },
+  { id: "amountDue",                label: "38.h.Amount of Tax and Penalty Due",                    type: "text" },
+  { id: "newResidentTax",           label: "$90 New Resident Tax",                             type: "checkbox" },
+  { id: "residentPreviousState",    label: "Resident's previous state",                        type: "dropdown" },
+  { id: "evenTradeTax",             label: "$5 Even Trade Tax",                                type: "checkbox" },
+  { id: "giftTax",                  label: "$10 Gift Tax Attach Comptroller Form 14-317",      type: "checkbox" },
+  { id: "salvageFee",               label: "$65 Rebuilt Salvage Fee",                          type: "checkbox" },
+  { id: "emissionsFee25",           label: "2.5% Emissions Fee",                               type: "text" },
+  { id: "emissionsFee25Diesel",     label: "2.5% Emissions Fee Diesel Vehicles 1996...",       type: "checkbox" },
+  { id: "emissionsFee1",            label: "1% Emissions Fee",                                 type: "text" },
+  { id: "emissionsFee1Diesel",      label: "1% Emissions Fee Diesel Vehicles 1997...",         type: "checkbox" },
+  { id: "taxExemptionReason",       label: "Sales Tax Exemption Reason",                       type: "text" },
+  { id: "taxExemption",           label: "Exemption claimed under the Motor vehicle Sales and Use Tax Law because:",type: "checkbox" },
+  { id: "applicationFee",           label: "$28 or $33 Application Fee for Texas Title",       type: "checkbox" },
   
   // Certification
   { id: "inspectionVerified", label: "I have physically inspected the vehicle described and verified the vehicle identification number above", type: "checkbox" },
@@ -699,21 +229,22 @@ const fields: FieldDef[] = [
 ];
 
 const sections = [
-  { title: "Applying For", from: 0, to: 3 },
-  { title: "Correction Reason", from: 4, to: 7 },
-  { title: "Vehicle Details", from: 8, to: 14 },
-  { title: "Odometer & Weights", from: 15, to: 21 },
-  { title: "Applicant Type & Identification", from: 22, to: 37 },
-  { title: "Names & Addresses", from: 38, to: 50 },
-  { title: "Previous Owner & Dealer Info", from: 51, to: 55 },
-  { title: "Renewal Recipient & Mailing", from: 56, to: 63 },
-  { title: "Contact & Attachments", from: 64, to: 67 },
-  { title: "Vehicle Location & E-Title", from: 68, to: 73 },
-  { title: "Lien Information", from: 74, to: 80 },
-  { title: "Dealership & Trade-Ins", from: 81, to: 89 },
-  { title: "Sales & Use Tax", from: 90, to: 114 },
-  { title: "Certify & Signatures(Check if applicable)", from: 115, to: 123 }
+  { title: "Applying For",                         from: 0,   to: 3   },
+  { title: "Correction Reason",                    from: 4,   to: 7   },
+  { title: "Vehicle Details",                      from: 8,   to: 14  },
+  { title: "Odometer & Weights",                   from: 15,  to: 21  },
+  { title: "Applicant Type & Identification",      from: 22,  to: 37  },
+  { title: "Names & Addresses",                    from: 38,  to: 50  },
+  { title: "Previous Owner & Dealer Info",         from: 51,  to: 55  },
+  { title: "Renewal Recipient & Mailing",          from: 56,  to: 63  },
+  { title: "Contact & Attachments",                from: 64,  to: 67  },
+  { title: "Vehicle Location & E-Title",           from: 68,  to: 73  },
+  { title: "Lien Information",                     from: 74,  to: 80  },
+  { title: "Dealership & Trade-Ins",               from: 81,  to: 89  },
+  { title: "Sales & Use Tax",                      from: 90,  to: 114 },
+  { title: "Certify & Signatures",                 from: 118, to: 123 },
 ];
+
 
 type SigPad = InstanceType<typeof SignatureCanvas>;
 
@@ -722,7 +253,6 @@ export default function Responsive130UForm({
   sectionClass = "",
   gridClass = "",
   initialValues = {},
-  showAllErrors = false
 }: Responsive130UFormProps) {
   const [formState, setFormState] = useState<Record<string, any>>(() => {
     const state: Record<string, any> = {};
@@ -763,49 +293,24 @@ export default function Responsive130UForm({
     }
   };
 
-  const updateSignatureInState = (id: string) => {
+  const getSignatureData = (id: string): string | null => {
     const ref = getSigRef(id);
-    const data = ref?.current?.getCanvas().toDataURL("image/png") || "";
-    setFormState(prev => ({ ...prev, [id]: data }));
+    if (!ref?.current || ref.current.isEmpty()) return null;
+    return ref.current.getCanvas().toDataURL("image/png");
   };
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    fields.forEach(f => {
-      if (f.visibleCondition && !f.visibleCondition(formState)) return;
-      if (f.validation) {
-        const err = f.validation(formState[f.id], formState);
-        if (err) newErrors[f.id] = err;
-      }
-    });
-    
-    const err = validators.signatureBlock("additionalApplicant", "additionalApplicantDate", formState);
-    if (err) { 
-      newErrors["additionalApplicant"] = err; 
-      newErrors["additionalApplicantDate"] = err; 
-    }
-    
-    return newErrors;
+  const updateSignature = (id: string) => {
+    const sigData = getSignatureData(id);
+    const updated = { ...initialValues, [id]: sigData || "" };
+    onChange?.(updated);
   };
 
-  useEffect(() => {
-    const errs = validateForm();
-    setErrors(errs);
-    onChange?.(formState, Object.keys(errs).length === 0, errs);
-  }, [formState]);
-
-  const handleChange = (id: string, value: any) => {
-    setFormState(prev => ({ ...prev, [id]: value }));
-    setTouched(prev => ({ ...prev, [id]: true }));
+  const handleChange = (id: string, value: string | boolean) => {
+    const updated = { ...initialValues, [id]: value };
+    onChange?.(updated);
   };
 
-  const isVisible = (f: FieldDef) => f.visibleCondition ? f.visibleCondition(formState) : true;
-
-  const renderField = (f: FieldDef) => {
-    if (!isVisible(f)) return null;
-    const err = errors[f.id];
-    const showError = (touched[f.id] || showAllErrors) && err;
-    
+   const renderField = (f: FieldDef) => {
     if (f.type === "checkbox") {
       return (
         <div key={f.id} className="form-field">
@@ -813,16 +318,15 @@ export default function Responsive130UForm({
             <input
               id={f.id}
               type="checkbox"
-              checked={Boolean(formState[f.id])}
-              onChange={e => handleChange(f.id, e.target.checked)}
-              className={`form-checkbox ${showError ? 'input-error' : ''}`}
+              checked={!!initialValues[f.id]}
+              onChange={(e) => handleChange(f.id, e.target.checked)}
+              className="form-checkbox"
             />
             <span className="checkbox-label">
               {f.label}
               {f.required && <span className="text-red-500">*</span>}
             </span>
           </label>
-          {showError && <div className="error-message">{err}</div>}
         </div>
       );
     }
@@ -845,21 +349,21 @@ export default function Responsive130UForm({
                 className: "signature-canvas",
                 style: { border: "1px solid #ccc", borderRadius: "4px" }
               }}
-              onEnd={() => updateSignatureInState(f.id)}
+              onEnd={() => updateSignature(f.id)}
             />
             <button
               type="button"
-              onClick={() => { ref?.current?.clear(); updateSignatureInState(f.id); }}
+              onClick={() => { ref?.current?.clear(); updateSignature(f.id); }}
               className="clear-signature-btn"
             >
               Clear
             </button>
           </div>
-          {showError && <div className="error-message">{err}</div>}
         </div>
       );
     }
 
+    // Handle dropdowns for state fields
     if (STATE_FIELDS.has(f.id)) {
       return (
         <div key={f.id} className="form-field">
@@ -869,22 +373,20 @@ export default function Responsive130UForm({
           </label>
           <select
             id={f.id}
-            value={String(formState[f.id] || "")}
-            onChange={e => handleChange(f.id, e.target.value)}
-            className={`form-input ${showError ? 'input-error' : ''}`}
+            value={String(initialValues[f.id] || "")}
+            onChange={(e) => handleChange(f.id, e.target.value)}
+            className="form-input"
           >
             <option value="">Select State</option>
             {STATE_ABBREVIATIONS.map(abbr => (
-              <option key={abbr} value={abbr}>
-                {STATE_NAMES[abbr]}
-              </option>
+              <option key={abbr} value={abbr}>{abbr}</option>
             ))}
           </select>
-          {showError && <div className="error-message">{err}</div>}
         </div>
       );
     }
 
+    // Handle text inputs
     return (
       <div key={f.id} className="form-field">
         <label htmlFor={f.id} className="form-label">
@@ -894,18 +396,17 @@ export default function Responsive130UForm({
         <input
           id={f.id}
           type="text"
-          value={String(formState[f.id] || "")}
-          onChange={e => handleChange(f.id, e.target.value)}
-          className={`form-input ${showError ? 'input-error' : ''}`}
+          value={String(initialValues[f.id] || "")}
+          onChange={(e) => handleChange(f.id, e.target.value)}
+          className="form-input"
         />
-        {showError && <div className="error-message">{err}</div>}
       </div>
     );
   };
 
   return (
     <>
-      {sections.map(({title, from, to}) => (
+      {sections.map(({ title, from, to }) => (
         <section key={title} className={sectionClass}>
           <div className="section-header">
             <h2 className="section-title">{title}</h2>

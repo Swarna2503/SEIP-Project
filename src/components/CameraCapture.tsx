@@ -1,5 +1,5 @@
 // src/components/CameraCapture.tsx
-import  { useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 
 interface CameraCaptureProps {
   onCapture: (blob: Blob) => void;

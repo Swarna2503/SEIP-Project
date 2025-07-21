@@ -1,4 +1,4 @@
-import  { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/home.css";
 
@@ -22,7 +22,16 @@ const idCategories = [
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const [selectedIdType, setSelectedIdType] = useState("");
+  // const [selectedIdType, setSelectedIdType] = useState("");
+  // the selected ID type is stored in sessionStorage
+  const [selectedIdType, setSelectedIdType] = useState(() => {
+    return sessionStorage.getItem("selectedIdType") || "";
+  });
+
+  // when the component mounts, retrieve the selected ID type from sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem("selectedIdType", selectedIdType);
+  }, [selectedIdType]);
 
   return (
     <div className="home-wrapper">
@@ -98,8 +107,9 @@ export default function HomePage() {
                 <h4>Identification</h4>
                 <p>Valid photo identification – see acceptable ID types below</p>
                 <div className="id-dropdown" style={{ marginTop: "0.75rem" }}>
-                  <label>Acceptable Photo ID Types</label>
+                  <label htmlFor="id-type-select">Acceptable Photo ID Types</label>
                   <select
+                    id="id-type-select"
                     value={selectedIdType}
                     onChange={(e) => setSelectedIdType(e.target.value)}
                   >

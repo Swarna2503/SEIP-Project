@@ -1,12 +1,13 @@
 // src/api/title.ts
-import { apiBaseURL } from "./config";
+import { getAPIBaseURL } from "./config";
 
 export async function postTitleOCR(file: File, userId: string) {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("user_id", userId);
 
-  const response = await fetch(`${apiBaseURL}/title/ocr`, {
+  const baseURL = await getAPIBaseURL();
+  const response = await fetch(`${baseURL}/title/ocr`, {
     method: "POST",
     body: formData,
   });
@@ -16,6 +17,18 @@ export async function postTitleOCR(file: File, userId: string) {
     throw new Error(errData.message || "Title OCR failed");
   }
 
-  const data = await response.json();
-  return data; 
+  return await response.json();
 }
+
+export async function getLatestTitleOCR(userId: string) {
+  const baseURL = await getAPIBaseURL();
+  const response = await fetch(`${baseURL}/title/latest?user_id=${userId}`);
+
+  if (!response.ok) {
+    const errData = await response.json();
+    throw new Error(errData.detail || "Failed to fetch latest title OCR record");
+  }
+
+  return await response.json();
+}
+

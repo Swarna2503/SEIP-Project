@@ -1,5 +1,5 @@
 // src/pages/PreviewPage.tsx
-import  { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function PreviewPage() {
@@ -37,17 +37,37 @@ export default function PreviewPage() {
     document.body.removeChild(a);
   };
 
+  const handleSubmit = () => {
+    if (!state?.pdfData) {
+      setError('Cannot submit - no PDF data available');
+      return;
+    }
+    navigate('/submit', { state: { pdfData: state.pdfData } });
+  };
+
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: 'auto' }}>
       <h1>Document Preview</h1>
       
       {error && (
-        <div style={{ color: 'red', padding: '10px', border: '1px solid red' }}>
+        <div style={{ 
+          color: 'red', 
+          padding: '10px', 
+          border: '1px solid red',
+          borderRadius: 4,
+          marginBottom: 15,
+          backgroundColor: '#ffebee'
+        }}>
           {error}
         </div>
       )}
       
-      <div style={{ marginBottom: 20, display: 'flex', gap: 10 }}>
+      <div style={{ 
+        marginBottom: 20, 
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 10 
+      }}>
         <button 
           onClick={() => navigate(-1)}
           style={{ 
@@ -55,7 +75,10 @@ export default function PreviewPage() {
             background: '#6c757d', 
             color: 'white',
             border: 'none',
-            borderRadius: 4
+            borderRadius: 4,
+            cursor: 'pointer',
+            flex: '1 1 120px',
+            minWidth: 120
           }}
         >
           Back to Edit
@@ -68,16 +91,42 @@ export default function PreviewPage() {
             background: '#28a745', 
             color: 'white',
             border: 'none',
-            borderRadius: 4
+            borderRadius: 4,
+            cursor: 'pointer',
+            flex: '1 1 150px',
+            minWidth: 150
           }}
           disabled={!pdfUrl}
         >
           Download PDF
         </button>
+
+        <button 
+          onClick={handleSubmit}
+          style={{ 
+            padding: '10px 15px', 
+            background: '#007bff', 
+            color: 'white',
+            border: 'none',
+            borderRadius: 4,
+            cursor: 'pointer',
+            flex: '1 1 180px',
+            minWidth: 180
+          }}
+          disabled={!pdfUrl}
+        >
+          Submit Document
+        </button>
       </div>
 
       {pdfUrl ? (
-        <div style={{ height: '80vh', border: '1px solid #ccc', borderRadius: 4 }}>
+        <div style={{ 
+          height: '80vh', 
+          border: '1px solid #ccc', 
+          borderRadius: 4,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          overflow: 'hidden'
+        }}>
           <iframe 
             src={pdfUrl} 
             title="PDF Preview"
@@ -86,7 +135,16 @@ export default function PreviewPage() {
           />
         </div>
       ) : !error && (
-        <p>Loading document preview...</p>
+        <div style={{
+          height: '80vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          border: '1px dashed #ccc',
+          borderRadius: 4
+        }}>
+          <p style={{ color: '#6c757d' }}>Loading document preview...</p>
+        </div>
       )}
     </div>
   );

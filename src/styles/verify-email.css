@@ -1,0 +1,100 @@
+/* src/pages/VerifyEmailPage.css */
+.verify-page {
+    max-width: 500px;
+    margin: 3rem auto;
+    padding: 2.5rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    text-align: center;
+  }
+  
+  .verify-page h2 {
+    margin-bottom: 1.8rem;
+    font-weight: 600;
+    font-size: 1.5rem;
+    color: #333;
+  }
+  
+  .verify-page .error-text {
+    color: #e53935;
+    background: #ffebee;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    font-size: 0.95rem;
+  }
+  
+  .verify-page .info-text {
+    color: #1e88e5;
+    background: #e3f2fd;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    font-size: 0.95rem;
+  }
+  
+  .verify-page input {
+    width: 100%;
+    padding: 14px 18px;
+    margin: 1rem 0 1.8rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+  }
+  
+  .verify-page input:focus {
+    outline: none;
+    border-color: #1e88e5;
+    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.2);
+  }
+  
+  .verify-page button {
+    width: 100%;
+    padding: 14px;
+    background: #1e88e5;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    margin-bottom: 1rem;
+  }
+  
+  .verify-page button:not(:disabled):hover {
+    background: #1565c0;
+  }
+  
+  .verify-page button:disabled {
+    background: #90caf9;
+    cursor: not-allowed;
+    opacity: 0.8;
+  }
+  
+  .resend-section {
+    margin-top: 1.2rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid #eee;
+  }
+  
+  .resend-section button {
+    background: transparent;
+    color: #1e88e5;
+    border: 1px solid #1e88e5;
+  }
+  
+  .resend-section button:not(:disabled):hover {
+    background: rgba(30, 136, 229, 0.05);
+  }
+  
+  /* Responsive design */
+  @media (max-width: 600px) {
+    .verify-page {
+      margin: 1.5rem;
+      padding: 1.8rem;
+    }
+  }
