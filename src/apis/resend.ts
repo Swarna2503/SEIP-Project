@@ -11,4 +11,3 @@ export async function resendCode(email: string) {
     body: JSON.stringify({ email }),
   });
 }
-

@@ -1,5 +1,5 @@
 // src/pages/LoginPage.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/auth";
 import "../styles/login.css";
@@ -8,11 +8,10 @@ export default function LoginPage() {
   const { login, loading, error } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({ email: "", password: "" });
   const navigate = useNavigate();
 
-  // check if the email and password are valid
+  // 校验函数
   const validateEmail = (email: string) => {
     if (!email.trim()) return "Email is required";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -26,13 +25,13 @@ export default function LoginPage() {
     return "";
   };
 
-  // every time email or password changes, validate them
-  // useEffect(() => {
-  //   setErrors({
-  //     email: validateEmail(email),
-  //     password: validatePassword(password),
-  //   });
-  // }, [email, password]);
+  // 动态更新错误信息
+  useEffect(() => {
+    setErrors({
+      email: validateEmail(email),
+      password: validatePassword(password),
+    });
+  }, [email, password]);
 
   const canSubmit =
     email.trim() !== "" &&
@@ -42,33 +41,13 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    setSubmitted(true); 
-    
-    // generate new validation results
-    const newErrors = {
-      email: validateEmail(email),
-      password: validatePassword(password),
-    };
-    // write the new errors to state
-    setErrors(newErrors);
-    // if there are errors, do not submit
-    if (newErrors.email || newErrors.password) {
-      console.log("Validation errors:", newErrors);
-      return;
-    }
-    
     if (!canSubmit) return;
     try {
       await login(email, password);
-
-      // print the cookies to console after login
-      console.log("🍪 document.cookie after login:", document.cookie);
     } catch {
       // errors handled in useAuth
     }
   };
-  console.log("canSubmit:", canSubmit, email, password, errors);
 
   return (
     <div className="login-page">
@@ -83,10 +62,9 @@ export default function LoginPage() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={loading}
-          className={submitted && errors.email ? "input-error" : ""}
+          className={errors.email ? "input-error" : ""}
         />
-        {/* only show the error message after submission */}
-        {submitted && errors.email && <p className="error-text">{errors.email}</p>}
+        {errors.email && <p className="error-text">{errors.email}</p>}
 
         <label htmlFor="password">Password</label>
         <input
@@ -96,11 +74,11 @@ export default function LoginPage() {
           placeholder="••••••••"
           onChange={(e) => setPassword(e.target.value)}
           disabled={loading}
-          className={submitted && errors.password ? "input-error" : ""}
+          className={errors.password ? "input-error" : ""}
         />
-        {submitted && errors.password && <p className="error-text">{errors.password}</p>}
-        {/* disabled={!canSubmit || loading} */}
-        <button type="submit" >
+        {errors.password && <p className="error-text">{errors.password}</p>}
+
+        <button type="submit" disabled={!canSubmit || loading}>
           Continue →
         </button>
 

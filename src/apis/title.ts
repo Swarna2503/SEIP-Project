@@ -31,4 +31,3 @@ export async function getLatestTitleOCR(userId: string) {
 
   return await response.json();
 }
-

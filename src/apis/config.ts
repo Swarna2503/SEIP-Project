@@ -36,4 +36,3 @@ export async function getAPIBaseURL(): Promise<string> {
 // later when deploy to the server use the following：
 // export const apiBaseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 // console.log("API BASE URL →", apiBaseURL);
-
