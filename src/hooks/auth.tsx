@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   // Basic registration simulation
-  async function register(email: string, password: string, name: string) {
+  async function register(email: string, _password: string, name: string) {
     setLoading(true);
     setError(null);
     

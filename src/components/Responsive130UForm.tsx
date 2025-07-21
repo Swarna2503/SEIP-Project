@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { STATE_ABBREVIATIONS, STATE_NAMES } from '../utils/stateAbbreviations';
 
@@ -686,15 +686,15 @@ const fields: FieldDef[] = [
     id: "additionalApplicant",      
     label: "Additional Applicant",                             
     type: "text",
-    validation: (value, formState) => 
+    validation: (_, formState) => 
       validators.signatureBlock("additionalApplicant", "additionalApplicantDate", formState)
   },
   { 
     id: "additionalApplicantDate",  
     label: "Date_3",                                           
     type: "text",
-    validation: (value, formState) => 
-      validators.signatureBlock("additionalApplicant", "additionalApplicantDate", formState) || validators.date(value)
+    validation: (_, formState) => 
+      validators.signatureBlock("additionalApplicant", "additionalApplicantDate", formState) || validators.date(formState.additionalApplicantDate)
   },
 ];
 
@@ -734,7 +734,7 @@ export default function Responsive130UForm({
         if (STATE_FIELDS.has(f.id)) {
           const strVal = String(val);
           const foundEntry = Object.entries(STATE_NAMES).find(
-            ([code, name]) => name === strVal
+            ([, name]) => name === strVal
           );
           state[f.id] = foundEntry ? foundEntry[0] : strVal;
         } else {

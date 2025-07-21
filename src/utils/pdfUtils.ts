@@ -1,14 +1,7 @@
 // src/utils/pdfUtils.ts
 import {
   PDFDocument,
-  PDFCheckBox,
-  PDFTextField,
   StandardFonts,
-  rgb,
-  PDFField,
-  PDFDropdown,
-  PDFOptionList,
-  PDFButton,
 } from "pdf-lib";
 
 export interface PdfSignature {
