@@ -10,6 +10,8 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import RegisterPage from "./pages/RegisterPage";
 import PrivateRoute from "./components/privateroute";
 import SubmitPage from "./pages/submitpage";
+import ForgotPasswordPage from "./pages/forgotPasswordPage";
+import ResetPasswordPage from "./pages/resetPasswordPage";
 
 export default function App() {
   // const isLoggedIn = Boolean(sessionStorage.getItem("userEmail"));
@@ -20,7 +22,8 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
-
+      <Route path="/forgot-password" element={<ForgotPasswordPage/>} />
+      <Route path="/reset-password" element={<ResetPasswordPage/>} />
       <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
       <Route path="/ocr" element={<PrivateRoute><OCRPage /></PrivateRoute>} />
       <Route path="/upload-title" element={<PrivateRoute><TitleUploadPage /></PrivateRoute>} />

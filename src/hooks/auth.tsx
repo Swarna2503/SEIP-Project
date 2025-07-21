@@ -1,4 +1,4 @@
-// src/hooks/auth.tsx (AuthProvider 调整)
+// src/hooks/auth.tsx
 import {
   createContext,
   useState,
@@ -23,6 +23,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  sendPasswordResetEmail: (email: string) => Promise<void>;
+  resetPassword: (token: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -78,13 +80,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Mock password reset email function
+  async function sendPasswordResetEmail(email: string) {
+    setLoading(true);
+    setError(null);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    try {
+      // Mock validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new Error("Invalid email format");
+      }
+      
+      console.log(`[MOCK] Password reset email sent to: ${email}`);
+      // In a real app, we would navigate to a confirmation page
+      // For mock purposes, we'll just show a success message
+      navigate('/reset-password', { state: { email } });
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Mock password reset function
+  async function resetPassword(token: string, newPassword: string) {
+    setLoading(true);
+    setError(null);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    try {
+      // Mock validation
+      if (newPassword.length < 8) {
+        throw new Error("Password must be at least 8 characters");
+      }
+      
+      console.log(`[MOCK] Password reset for token: ${token}`);
+      console.log(`[MOCK] New password set: ${newPassword}`);
+      
+      // Simulate successful reset
+      navigate('/login', { state: { message: "Password reset successfully!" } });
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function logout() {
     setUser(null);
     navigate("/login", { replace: true });
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, register, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      error, 
+      login, 
+      register, 
+      logout,
+      sendPasswordResetEmail,
+      resetPassword
+    }}>
       {children}
     </AuthContext.Provider>
   );

@@ -11,7 +11,6 @@ export default function LoginPage() {
   const [errors, setErrors] = useState({ email: "", password: "" });
   const navigate = useNavigate();
 
-  // 校验函数
   const validateEmail = (email: string) => {
     if (!email.trim()) return "Email is required";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -25,7 +24,6 @@ export default function LoginPage() {
     return "";
   };
 
-  // 动态更新错误信息
   useEffect(() => {
     setErrors({
       email: validateEmail(email),
@@ -77,6 +75,17 @@ export default function LoginPage() {
           className={errors.password ? "input-error" : ""}
         />
         {errors.password && <p className="error-text">{errors.password}</p>}
+
+        <div className="forgot-password-container">
+          <button 
+            type="button"
+            className="forgot-password"
+            onClick={() => navigate('/forgot-password')}
+            disabled={loading}
+          >
+            Forgot Password?
+          </button>
+        </div>
 
         <button type="submit" disabled={!canSubmit || loading}>
           Continue →
