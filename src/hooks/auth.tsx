@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setLoading(true);
     getAPIBaseURL().then((baseURL) => {
-      fetch(`${baseURL}/profile`, { credentials: "include" })
+      fetch(`${baseURL}/api/profile`, { credentials: "include" })
         .then(res => {
           if (!res.ok) throw new Error("未登录");
           return res.json();
