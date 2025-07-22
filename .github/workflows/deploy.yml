@@ -36,15 +36,23 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         source: "dist/*"
-        target: "/home/ec2-user/frontend/"
+        target: "/home/ec2-user/frontend/dist/"
 
-    - name: Reload nginx
+    - name: Publish to Nginx webroot
       uses: appleboy/ssh-action@v0.1.6
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
+          # 清空 nginx webroot
+          sudo rm -rf /usr/share/nginx/html/*
+          # 同步最新前端产物
+          sudo rsync -av --delete /home/ec2-user/frontend/dist/ /usr/share/nginx/html/
+          # 修正权限
+          sudo chown -R nginx:nginx /usr/share/nginx/html
+          sudo chmod -R 755 /usr/share/nginx/html
+          # 校验并重载 nginx
           sudo nginx -t
           sudo systemctl reload nginx
         
