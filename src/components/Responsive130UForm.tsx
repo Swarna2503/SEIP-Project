@@ -299,7 +299,7 @@ const fields: FieldDef[] = [
   // Applicant name
   { 
     id: "applicantName",            
-    label: "16. Applicant First Name or Entity Name...",       
+    label: "16. Applicant First Name or Entity Name",       
     type: "text",
     required: true,
     validation: validators.required
@@ -315,7 +315,7 @@ const fields: FieldDef[] = [
   { id: "applicantSuffix", label: "16. Applicant Suffix", type: "text" },
 
   // Additional applicant
-  { id: "additionalApplicantName", label: "17. Additional Applicant First Name...", type: "text" },
+  { id: "additionalApplicantName", label: "17. Additional Applicant First Name", type: "text" },
   { id: "additionalApplicantMiddleName", label: "17.Additional Applicant Middle Name", type: "text" },
   { id: "additionalApplicantLastName", label: "17.Additional Applicant Last Name", type: "text" },
   { id: "additionalApplicantSuffix", label: "17. Additional Applicant Suffix", type: "text" },
@@ -487,7 +487,7 @@ const fields: FieldDef[] = [
   // Dealership
   { id: "rentalPermit", label: "35.I Hold Motor Vehicle Retailer (Rental) Permit Number", type: "checkbox" },
   { id: "permitNumber", label: "35.Permit Number", type: "text" },
-  { id: "dealerOrLessor", label: "35.Yes, I am a dealer or lessor that qualifies...", type: "checkbox" },
+  { id: "dealerOrLessor", label: "35.Yes, I am a dealer or lessor that qualifies", type: "checkbox" },
   { id: "gdnOrLessorNumber", label: "35.GDN or Lessor Number", type: "text" },
   
   // Trade-in
@@ -641,7 +641,7 @@ const fields: FieldDef[] = [
   },
   { 
     id: "emissionsFee25Diesel",     
-    label: "2.5% Emissions Fee Diesel Vehicles 1996...",       
+    label: "2.5% Emissions Fee Diesel Vehicles 1996",       
     type: "checkbox",
     visibleCondition: formState => formState.salesAndUseTax
   },
@@ -654,7 +654,7 @@ const fields: FieldDef[] = [
   },
   { 
     id: "emissionsFee1Diesel",      
-    label: "1% Emissions Fee Diesel Vehicles 1997...",         
+    label: "1% Emissions Fee Diesel Vehicles 1997",         
     type: "checkbox",
     visibleCondition: formState => formState.salesAndUseTax
   },
@@ -990,7 +990,6 @@ export default function Responsive130UForm({
                   </span>
                 )}
               </h2>
-              <hr />
             </div>
             
             {isExpanded && (
