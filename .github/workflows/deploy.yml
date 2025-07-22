@@ -36,7 +36,7 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         source: "dist/*"
-        target: "/home/ec2-user/frontend/dist/"
+        target: "/home/ec2-user/frontend/"
 
     - name: Publish to Nginx webroot
       uses: appleboy/ssh-action@v0.1.6
