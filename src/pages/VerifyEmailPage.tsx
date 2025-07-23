@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { verifyEmail } from '../apis/verify';
 import { resendCode } from '../apis/resend';
+import '../styles/verify-email.css';
 
 export default function VerifyEmailPage() {
   const { email } = useLocation().state as { email: string };
