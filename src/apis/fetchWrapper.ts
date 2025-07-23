@@ -1,6 +1,12 @@
 // src/api/fetchWrapper.ts
 import { getAPIBaseURL } from "./config";
 
+export interface FetchResult<T = any> {
+  ok: boolean;
+  status: number;
+  data: T;
+}
+
 export async function fetchWrapper(path: string, options: RequestInit = {}) {
   const baseURL = await getAPIBaseURL();
   const url = `${baseURL}/api${path}`;
@@ -17,5 +23,5 @@ export async function fetchWrapper(path: string, options: RequestInit = {}) {
   const response = await fetch(url, defaultOptions);
   const data = await response.json().catch(() => ({}));
 
-  return { ok: response.ok, data };
+  return { ok: response.ok, status: response.status, data };
 }
