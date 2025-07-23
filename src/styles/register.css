@@ -1,0 +1,32 @@
+.password-input-container {
+    position: relative;
+    width: 100%;
+  }
+  
+  .password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    font-size: 0.9rem;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .password-toggle:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .password-input-container input {
+    width: 100%;
+    padding-right: 35px; 
+  }

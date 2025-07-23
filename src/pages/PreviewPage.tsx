@@ -1,4 +1,3 @@
-// src/pages/PreviewPage.tsx
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -46,19 +45,33 @@ export default function PreviewPage() {
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 1200, margin: 'auto' }}>
-      <h1>Document Preview</h1>
+    <div style={{ 
+      padding: 24, 
+      maxWidth: 1200, 
+      margin: 'auto',
+      backgroundColor: 'var(--light)',
+      color: 'var(--secondary)',
+      minHeight: '100vh'
+    }}>
+      <h1 style={{ 
+        color: 'var(--primary)',
+        marginBottom: 24,
+        borderBottom: '2px solid var(--primary-dark)',
+        paddingBottom: 16
+      }}>
+        Document Preview
+      </h1>
       
       {error && (
         <div style={{ 
-          color: 'red', 
-          padding: '10px', 
-          border: '1px solid red',
-          borderRadius: 4,
-          marginBottom: 15,
-          backgroundColor: '#ffebee'
+          color: 'var(--danger)', 
+          backgroundColor: 'var(--danger-light)',
+          padding: '12px 16px', 
+          border: '1px solid var(--danger)',
+          borderRadius: 'var(--radius)',
+          marginBottom: 24,
         }}>
-          {error}
+          <strong>Error:</strong> {error}
         </div>
       )}
       
@@ -71,15 +84,21 @@ export default function PreviewPage() {
         <button 
           onClick={() => navigate(-1)}
           style={{ 
-            padding: '10px 15px', 
-            background: '#6c757d', 
-            color: 'white',
+            padding: '12px 18px', 
+            background: 'var(--primary-dark)', 
+            color: 'var(--lighter)',
             border: 'none',
-            borderRadius: 4,
+            borderRadius: 'var(--radius)',
             cursor: 'pointer',
             flex: '1 1 120px',
-            minWidth: 120
+            minWidth: 120,
+            fontWeight: 600,
+            fontSize: 14,
+            transition: 'var(--transition)',
+            boxShadow: 'var(--shadow)'
           }}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--secondary)'}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--primary-dark)'}
         >
           Back to Edit
         </button>
@@ -87,16 +106,22 @@ export default function PreviewPage() {
         <button 
           onClick={handleDownload}
           style={{ 
-            padding: '10px 15px', 
-            background: '#28a745', 
-            color: 'white',
+            padding: '12px 18px', 
+            background: 'var(--primary)', 
+            color: 'var(--lighter)',
             border: 'none',
-            borderRadius: 4,
+            borderRadius: 'var(--radius)',
             cursor: 'pointer',
             flex: '1 1 150px',
-            minWidth: 150
+            minWidth: 150,
+            fontWeight: 600,
+            fontSize: 14,
+            transition: 'var(--transition)',
+            boxShadow: 'var(--shadow)'
           }}
           disabled={!pdfUrl}
+          onMouseOver={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--secondary)')}
+          onMouseOut={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--primary)')}
         >
           Download PDF
         </button>
@@ -104,16 +129,22 @@ export default function PreviewPage() {
         <button 
           onClick={handleSubmit}
           style={{ 
-            padding: '10px 15px', 
-            background: '#007bff', 
-            color: 'white',
+            padding: '12px 18px', 
+            background: 'var(--primary-dark)', 
+            color: 'var(--lighter)',
             border: 'none',
-            borderRadius: 4,
+            borderRadius: 'var(--radius)',
             cursor: 'pointer',
             flex: '1 1 180px',
-            minWidth: 180
+            minWidth: 180,
+            fontWeight: 600,
+            fontSize: 14,
+            transition: 'var(--transition)',
+            boxShadow: 'var(--shadow)'
           }}
           disabled={!pdfUrl}
+          onMouseOver={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--secondary)')}
+          onMouseOut={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--primary-dark)')}
         >
           Submit Document
         </button>
@@ -122,10 +153,11 @@ export default function PreviewPage() {
       {pdfUrl ? (
         <div style={{ 
           height: '80vh', 
-          border: '1px solid #ccc', 
-          borderRadius: 4,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          overflow: 'hidden'
+          border: '1px solid var(--border)', 
+          borderRadius: 'var(--radius)',
+          boxShadow: 'var(--shadow)',
+          overflow: 'hidden',
+          backgroundColor: 'var(--lighter)'
         }}>
           <iframe 
             src={pdfUrl} 
@@ -140,10 +172,11 @@ export default function PreviewPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          border: '1px dashed #ccc',
-          borderRadius: 4
+          border: '1px dashed var(--border)',
+          borderRadius: 'var(--radius)',
+          backgroundColor: 'var(--lighter)'
         }}>
-          <p style={{ color: '#6c757d' }}>Loading document preview...</p>
+          <p style={{ color: 'var(--primary-dark)' }}>Loading document preview...</p>
         </div>
       )}
     </div>

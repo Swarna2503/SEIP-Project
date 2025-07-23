@@ -98,24 +98,25 @@ export default function SubmitPage() {
         maxWidth: 500,
         margin: '40px auto',
         padding: 30,
-        backgroundColor: 'white',
-        borderRadius: 8,
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        backgroundColor: 'var(--lighter)',
+        borderRadius: 'var(--radius)',
+        boxShadow: 'var(--shadow)',
         textAlign: 'center'
       }}>
         <div style={{
           fontSize: 72,
-          color: '#28a745',
+          color: 'var(--primary)',
           marginBottom: 20
         }}>✓</div>
         <h1 style={{
           fontSize: 28,
           fontWeight: 600,
-          marginBottom: 15
+          marginBottom: 15,
+          color: 'var(--primary)'
         }}>Submission Successful!</h1>
         <p style={{
           fontSize: 16,
-          color: '#6c757d',
+          color: 'var(--primary-dark)',
           marginBottom: 30,
           lineHeight: 1.5
         }}>
@@ -126,15 +127,20 @@ export default function SubmitPage() {
           onClick={() => navigate('/')}
           style={{
             padding: '12px 24px',
-            backgroundColor: '#007bff',
-            color: 'white',
+            backgroundColor: 'var(--primary)',
+            color: 'var(--lighter)',
             border: 'none',
-            borderRadius: 4,
+            borderRadius: 'var(--radius)',
             fontSize: 16,
             cursor: 'pointer',
             width: '100%',
-            maxWidth: 300
+            maxWidth: 300,
+            fontWeight: 600,
+            transition: 'var(--transition)',
+            boxShadow: 'var(--shadow)'
           }}
+          onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--secondary)'}
+          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--primary)'}
         >
           Return to Dashboard
         </button>
@@ -147,44 +153,46 @@ export default function SubmitPage() {
       maxWidth: 500,
       margin: '40px auto',
       padding: 30,
-      backgroundColor: 'white',
-      borderRadius: 8,
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+      backgroundColor: 'var(--lighter)',
+      borderRadius: 'var(--radius)',
+      boxShadow: 'var(--shadow)',
+      color: 'var(--secondary)'
     }}>
       <h1 style={{
         fontSize: 24,
         fontWeight: 600,
         marginBottom: 25,
-        textAlign: 'center'
+        textAlign: 'center',
+        color: 'var(--primary)'
       }}>Submit Document</h1>
       
       {error && (
         <div style={{
           padding: 15,
-          backgroundColor: '#ffebee',
-          color: '#b71c1c',
-          borderRadius: 4,
+          backgroundColor: 'var(--danger-light)',
+          color: 'var(--danger)',
+          borderRadius: 'var(--radius)',
           marginBottom: 25,
-          border: '1px solid #ffcdd2'
+          border: '1px solid var(--danger)'
         }}>
           {error}
         </div>
       )}
 
       <div style={{ marginBottom: 30 }}>
-        <p style={{ marginBottom: 15, lineHeight: 1.5 }}>
+        <p style={{ marginBottom: 15, lineHeight: 1.5, color: 'var(--secondary)' }}>
           Review your document before submitting to the DMV:
         </p>
         <div style={{
           padding: 15,
-          border: '1px solid #e0e0e0',
-          borderRadius: 4,
-          backgroundColor: '#f8f9fa'
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          backgroundColor: 'var(--light)'
         }}>
-          <p style={{ fontWeight: 600 }}>Document: Signed Title Transfer</p>
+          <p style={{ fontWeight: 600, color: 'var(--primary)' }}>Document: Signed Title Transfer</p>
           <p style={{ 
             fontSize: 14,
-            color: '#6c757d',
+            color: 'var(--primary-dark)',
             marginTop: 5
           }}>
             Ready for submission to Department of Motor Vehicles
@@ -196,15 +204,16 @@ export default function SubmitPage() {
         <h2 style={{
           fontSize: 18,
           fontWeight: 600,
-          marginBottom: 15
+          marginBottom: 15,
+          color: 'var(--primary)'
         }}>Upload Additional Documents</h2>
         
         <div style={{
-          border: '2px dashed #e0e0e0',
-          borderRadius: 8,
+          border: '2px dashed var(--border)',
+          borderRadius: 'var(--radius)',
           padding: 30,
           textAlign: 'center',
-          backgroundColor: '#fafafa',
+          backgroundColor: 'var(--light)',
           marginBottom: 15
         }}>
           <input
@@ -221,23 +230,27 @@ export default function SubmitPage() {
             style={{
               display: 'inline-block',
               padding: '12px 24px',
-              backgroundColor: '#f0f2f5',
-              borderRadius: 4,
+              backgroundColor: 'var(--lighter)',
+              borderRadius: 'var(--radius)',
               cursor: 'pointer',
-              border: '1px solid #d1d5db',
+              border: '1px solid var(--border)',
               fontWeight: 500,
-              marginBottom: 15
+              marginBottom: 15,
+              transition: 'var(--transition)',
+              color: 'var(--secondary)'
             }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--light)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--lighter)'}
           >
             {isUploading ? 'Uploading...' : 'Select File to Upload'}
           </label>
-          <p style={{ color: '#6c757d', fontSize: 14 }}>
+          <p style={{ color: 'var(--primary-dark)', fontSize: 14 }}>
             Accepted formats: PDF, JPG, PNG (max 5MB)
           </p>
           {uploadStatus && (
             <p style={{ 
               marginTop: 15,
-              color: '#28a745',
+              color: 'var(--primary)',
               fontWeight: 500
             }}>
               {uploadStatus}
@@ -254,16 +267,20 @@ export default function SubmitPage() {
         <button
           onClick={handleSubmit}
           style={{
-            padding: '12px',
-            borderRadius: 4,
-            backgroundColor: isLoading ? '#6c757d' : '#28a745',
-            color: 'white',
+            padding: '14px',
+            borderRadius: 'var(--radius)',
+            backgroundColor: isLoading ? 'var(--primary-dark)' : 'var(--primary)',
+            color: 'var(--lighter)',
             border: 'none',
             fontSize: 16,
             cursor: 'pointer',
-            transition: 'background-color 0.2s'
+            transition: 'var(--transition)',
+            fontWeight: 600,
+            boxShadow: 'var(--shadow)'
           }}
           disabled={isLoading || isUploading}
+          onMouseOver={(e) => !isLoading && !isUploading && (e.currentTarget.style.backgroundColor = 'var(--secondary)')}
+          onMouseOut={(e) => !isLoading && !isUploading && (e.currentTarget.style.backgroundColor = 'var(--primary)')}
         >
           {isLoading ? 'Submitting...' : 'Submit to DMV'}
         </button>

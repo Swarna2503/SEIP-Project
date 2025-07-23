@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/auth";
 import "../styles/home.css";
 
 const idCategories = [
@@ -22,7 +23,7 @@ const idCategories = [
 
 export default function HomePage() {
   const navigate = useNavigate();
-  // const [selectedIdType, setSelectedIdType] = useState("");
+  const { user, logout } = useAuth();
   // the selected ID type is stored in sessionStorage
   const [selectedIdType, setSelectedIdType] = useState(() => {
     return sessionStorage.getItem("selectedIdType") || "";
@@ -33,6 +34,13 @@ export default function HomePage() {
     sessionStorage.setItem("selectedIdType", selectedIdType);
   }, [selectedIdType]);
 
+  const handleLogout = () => {
+    const confirmLogout = window.confirm("Are you sure you want to log out?");
+    if (confirmLogout) {
+      logout();
+    }
+  };
+
   return (
     <div className="home-wrapper">
       {/* ─── Top App Bar ─── */}
@@ -42,9 +50,25 @@ export default function HomePage() {
             <h1>Texas Auto Title Portal</h1>
             <p>Department of Motor Vehicles – Title Processing Center</p>
           </div>
-          <div className="progress-widget">
-            <div className="label">Overall Progress</div>
-            <div className="value">0%</div>
+          <div className="header-right">
+            <div className="progress-widget">
+              <div className="label">Overall Progress</div>
+              <div className="value">0%</div>
+            </div>
+            <div className="user-section">
+              {user && (
+                <div className="user-info">
+                  <span className="user-email">{user.email}</span>
+                  <button 
+                    onClick={handleLogout}
+                    className="logout-button"
+                    title="Log out"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -94,7 +118,7 @@ export default function HomePage() {
               <div className="checklist-item-content">
                 <h4>Texas Certificate of Title</h4>
                 <p>
-                  Current vehicle title or Manufacturer’s Statement of Origin
+                  Current vehicle title or Manufacturer's Statement of Origin
                   (MSO) for new vehicles
                 </p>
               </div>
@@ -124,13 +148,13 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* c) Driver’s License */}
+            {/* c) Driver's License */}
             <div className="checklist-item">
               <span className="checklist-icon">🛡️</span>
               <div className="checklist-item-content">
-                <h4>Driver’s License</h4>
+                <h4>Driver's License</h4>
                 <p>
-                  Valid Texas driver’s license or state-issued ID card
+                  Valid Texas driver's license or state-issued ID card
                 </p>
               </div>
             </div>
