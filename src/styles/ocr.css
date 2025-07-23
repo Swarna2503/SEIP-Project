@@ -4,7 +4,7 @@
   justify-content: center;
   padding: 3rem 1rem;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1e293b, #334155);
   position: relative;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
@@ -102,7 +102,7 @@ li::marker {
 .dropzone-icon {
   width: 70px;
   height: 70px;
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  background: linear-gradient(135deg, #1e293b, #334155);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -177,7 +177,7 @@ li::marker {
 }
 
 .choose-button:hover {
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  background: linear-gradient(135deg, #1e293b, #334155);
   color: white;
   border-color: transparent;
   transform: translateY(-2px);
@@ -185,12 +185,12 @@ li::marker {
 }
 
 .camera-button {
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  background: linear-gradient(135deg, #334155, #475569);
   color: white;
 }
 
 .camera-button:hover {
-  background: linear-gradient(135deg, #5b5af1 0%, #9f4cf4 100%);
+  background: linear-gradient(135deg, #1e293b, #334155);
   transform: translateY(-2px);
   box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.5);
 }
@@ -285,7 +285,7 @@ li::marker {
 
 .accepted-box li::before {
   content: '•';
-  color: #6366f1;
+  color: #1e293b;
   font-size: 1.25rem;
   position: absolute;
   left: 0;
@@ -307,14 +307,14 @@ li::marker {
 }
 
 .primary {
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  background: linear-gradient(135deg, #334155, #475569);
   color: white;
   min-width: 180px;
   box-shadow: 0 8px 25px -5px rgba(99, 102, 241, 0.4);
 }
 
 .primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #5b5af1 0%, #9f4cf4 100%);
+  background: linear-gradient(135deg, #1e293b, #334155);
   transform: translateY(-2px);
   box-shadow: 0 15px 35px -5px rgba(99, 102, 241, 0.5);
 }
@@ -406,12 +406,12 @@ li::marker {
 }
 
 .btn.snap-button {
-  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  background: linear-gradient(135deg, #334155, #475569);
   color: white;
 }
 
 .btn.snap-button:hover {
-  background: linear-gradient(135deg, #5b5af1 0%, #9f4cf4 100%);
+  background: linear-gradient(135deg, #1e293b, #334155);
   transform: translateY(-2px);
   box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
 }

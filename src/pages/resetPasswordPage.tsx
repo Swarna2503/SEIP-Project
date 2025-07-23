@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/auth';
-import '../styles/login.css';
+import '../styles/register.css';
 
 export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState('');

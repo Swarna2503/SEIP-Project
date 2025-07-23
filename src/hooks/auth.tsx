@@ -37,6 +37,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Only check auth status once when the app loads, not on every navigation
+    if (user !== null) return; // Skip if user is already set
+    
     setLoading(true);
     getAPIBaseURL().then((baseURL) => {
       fetch(`${baseURL}/api/profile`, { credentials: "include" })
@@ -48,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .catch(() => setUser(null))
         .finally(() => setLoading(false));
     });
-  }, [navigate]);
+  }, []); // Remove navigate dependency
 
   async function login(email: string, password: string) {
     setLoading(true);
@@ -71,7 +74,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const { ok, data } = await registerApi(email, password, confirmPassword);
-      if (!ok) throw new Error(data.message || "Registration failed");
+      if (!ok) {
+        // Handle specific error cases based on the response
+        if (data.detail && data.detail.includes("already exists")) {
+          throw new Error("EMAIL_EXISTS");
+        } else if (data.detail && data.detail.includes("not verified")) {
+          throw new Error("EMAIL_NOT_VERIFIED");
+        } else {
+          throw new Error(data.message || data.detail || "Registration failed");
+        }
+      }
       navigate('/verify-email', { state: { email } });
     } catch (err: any) {
       setError(err.message);
@@ -81,8 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-// new added sendPasswordResetEmail function
-async function sendPasswordResetEmail(email: string) {
+  // new added sendPasswordResetEmail function
+  async function sendPasswordResetEmail(email: string) {
     setLoading(true);
     setError(null);
     try {
@@ -116,9 +128,21 @@ async function sendPasswordResetEmail(email: string) {
     }
   }
 
-  function logout() {
-    setUser(null);
-    navigate("/login", { replace: true });
+  async function logout() {
+    try {
+      // Call logout API to clear server-side session
+      const baseURL = await getAPIBaseURL();
+      await fetch(`${baseURL}/api/logout`, { 
+        method: 'POST',
+        credentials: "include" 
+      });
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+    } finally {
+      // Always clear client-side state regardless of API call result
+      setUser(null);
+      navigate("/login", { replace: true });
+    }
   }
 
   return (
