@@ -10,17 +10,48 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const navigate = useNavigate();
+  const [formError, setFormError] = useState<string | null>(null);
 
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+
+  const validatePassword = (pw: string): string[] => {
+    const errors = [];
+    if (pw.length < 8) errors.push("At least 8 characters");
+    if (!/[A-Z]/.test(pw)) errors.push("Must contain an uppercase letter");
+    if (!/[a-z]/.test(pw)) errors.push("Must contain a lowercase letter");
+    if (!/\d/.test(pw)) errors.push("Must contain a digit");
+    return errors;
+  };
   // const canSubmit = email.trim() !== '' && password.trim() !== '' && password === confirm;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await register(email, password);
-      navigate('/verify-email', { state: { email } });
-    } catch {
-      
+    const errors = validatePassword(password);
+    if(password !== confirm) {
+      errors.push("Passwords do not match");
     }
+    setValidationErrors(errors);
+    if (errors.length > 0) return;
+
+    try {
+      await register(email, password, confirm);
+      alert('Registration successful! Please verify your email.');
+      navigate('/verify-email', { state: { email } });
+    } catch(err) {
+      if (err instanceof Error) {
+        if (err.message.includes("not verified")) {
+          alert("This email is already registered but not verified. You can verify it now.");
+          navigate('/verify-email', { state: { email } });
+        } else {
+          alert("Registration failed: " + err.message);
+          setFormError(err.message);
+        }
+      } else {
+        alert("Unexpected error");
+        console.error(err);
+      }
+    } 
   };
 
   return (
@@ -28,6 +59,11 @@ export default function RegisterPage() {
       <form className="login-card" onSubmit={handleSubmit}>
         <h2>Create Account</h2>
         {error && <p className="error-text">{error}</p>}
+        {formError && <p className="error-text">{formError}</p>}
+        {/* Display validation errors */}
+        {validationErrors.map((msg, idx) => (
+          <p key={idx} className="error-text">{msg}</p>
+        ))}
 
         <label>Email Address</label>
         <input

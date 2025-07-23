@@ -22,7 +22,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, confirmPassword: string) => Promise<void>;
   logout: () => void;
   sendPasswordResetEmail: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getAPIBaseURL().then((baseURL) => {
       fetch(`${baseURL}/api/profile`, { credentials: "include" })
         .then(res => {
-          if (!res.ok) throw new Error("未登录");
+          if (!res.ok) throw new Error("Didn't log in yet");
           return res.json();
         })
         .then((data: User) => setUser(data))
@@ -66,11 +66,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function register(email: string, password: string) {
+  async function register(email: string, password: string, confirmPassword: string) {
     setLoading(true);
     setError(null);
     try {
-      const { ok, data } = await registerApi(email, password, password);
+      const { ok, data } = await registerApi(email, password, confirmPassword);
       if (!ok) throw new Error(data.message || "Registration failed");
       navigate('/verify-email', { state: { email } });
     } catch (err: any) {
