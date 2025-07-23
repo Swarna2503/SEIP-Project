@@ -8,6 +8,6 @@ export interface RegisterResponse {
 export async function register(email: string, password: string, confirmPassword: string) {
   return await fetchWrapper("/register", {
     method: "POST",
-    body: JSON.stringify({ email, confirmPassword, password }),
+    body: JSON.stringify({ email, password, confirmPassword }),
   });
 }

@@ -5,10 +5,17 @@ import { verifyEmail } from '../apis/verify';
 import { resendCode } from '../apis/resend';
 
 export default function VerifyEmailPage() {
-  const { email } = useLocation().state as { email: string };
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [code, setCode] = useState('');
+  const searchParams = new URLSearchParams(location.search);
+  const emailFromQuery = searchParams.get('email');           
+  const codeFromQuery = searchParams.get('code');           
+  const stateEmail = (location.state as { email?: string })?.email;
+
+  const [email] = useState(emailFromQuery || stateEmail || '');
+  const [code, setCode] = useState(codeFromQuery || '');
+
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
@@ -23,6 +30,13 @@ export default function VerifyEmailPage() {
       clearTimeout(timer);
     };
   }, [cooldown]);
+
+  useEffect(() => {
+    if (email && codeFromQuery) {
+      handleVerify();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleVerify = async () => {
     setError(null);
@@ -48,6 +62,16 @@ export default function VerifyEmailPage() {
     }
   };
 
+  if (!email) {
+    return (
+      <div className="verify-page">
+        <h2>Verification Error</h2>
+        <p className="error-text">Missing email. Please register again or use the email link.</p>
+        <button onClick={() => navigate('/register')}>Go to Register</button>
+      </div>
+    );
+  }
+  
   return (
     <div className="verify-page">
       <h2>Verify Email: {email}</h2>
