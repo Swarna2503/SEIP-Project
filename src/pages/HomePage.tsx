@@ -31,6 +31,9 @@ export default function HomePage() {
   const [existingAppId, setExistingAppId] = useState<string | null>(null);
   const [loadingAppCheck, setLoadingAppCheck] = useState(true);
 
+  if (loadingAppCheck) {
+    return <div className="loading">Checking for draft…</div>;
+  }
 
   // the selected ID type is stored in sessionStorage
   const [selectedIdType, setSelectedIdType] = useState(() => {

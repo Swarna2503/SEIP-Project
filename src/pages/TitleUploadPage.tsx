@@ -45,14 +45,22 @@ export interface TitleOcrData {
 }
 
 
-interface LocationState {
-  ocr: { name: string } | null;
-}
+// interface LocationState {
+//   ocr: { name: string } | null;
+// }
 
 export default function TitleUploadPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const userId = user?.user_id;
+  const { user, loading: authLoading } = useAuth();
+  // const userId = user?.user_id;
+  // 2) wait on auth
+  if (authLoading) {
+    return <div className="loading">Loading user info…</div>;
+  }
+  // 3) if not logged in, send to /login
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   // 🛠 一次性从 location.state 取出 ocr 和 applicationId
   const { state } = useLocation() as {
