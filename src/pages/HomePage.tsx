@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/auth";
-import { createApplication, getApplicationByUser } from "../apis/application";
+// import { createApplication, getApplicationByUser } from "../apis/application";
 import "../styles/home.css";
 
 const idCategories = [
