@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/auth";
-// import { createApplication, getApplicationByUser } from "../apis/application";
+import { createApplication, getApplicationByUser } from "../apis/application";
 import "../styles/home.css";
 
 const idCategories = [
@@ -25,6 +25,13 @@ const idCategories = [
 export default function HomePage() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  const userId = user?.user_id;
+  // NEW: track whether we have an existing draft application
+  const [existingAppId, setExistingAppId] = useState<string | null>(null);
+  const [loadingAppCheck, setLoadingAppCheck] = useState(true);
+
+
   // the selected ID type is stored in sessionStorage
   const [selectedIdType, setSelectedIdType] = useState(() => {
     return sessionStorage.getItem("selectedIdType") || "";
@@ -35,27 +42,46 @@ export default function HomePage() {
     sessionStorage.setItem("selectedIdType", selectedIdType);
   }, [selectedIdType]);
 
-  // Start application handler
-  // const handleStart = async () => {
-  //   const userId = user?.user_id;
-  //   if (!userId) return;
+  // on mount (or whenever userId changes), fetch any unfinished draft
+  useEffect(() => {
+    if (!userId) return;
+    setLoadingAppCheck(true);
+    getApplicationByUser(userId)
+      .then(res => {
+        if (res.ok && res.data.application_id) {
+          setExistingAppId(res.data.application_id);
+        } else {
+          setExistingAppId(null);
+        }
+      })
+      .catch(() => {
+        setExistingAppId(null);
+      })
+      .finally(() => {
+        setLoadingAppCheck(false);
+      });
+  }, [userId]);
 
-  //   const res = await getApplicationByUser(userId);
-  //   if (res.ok && res.data?.application_id) {
-  //     // 已有草稿，询问是否继续
-  //     const cont = window.confirm("您已有未完成申请，是否继续？");
-  //     if (cont) {
-  //       navigate("/ocr", { state: { applicationId: res.data.application_id } });
-  //     } else {
-  //       const newRes = await createApplication(userId);
-  //       navigate("/ocr", { state: { applicationId: newRes.data.application_id } });
-  //     }
-  //   } else {
-  //     // 没有草稿，创建新的
-  //     const newRes = await createApplication(userId);
-  //     navigate("/ocr", { state: { applicationId: newRes.data.application_id } });
-  //   }
-  // };
+  // handler to create a new application and navigate
+  const startNew = async () => {
+    if (!userId) return;
+    const res = await createApplication(userId);
+    if (res.ok && res.data.application_id) {
+      navigate("/ocr", {
+        state: { applicationId: res.data.application_id },
+      });
+    } else {
+      alert("Could not start a new application.");
+    }
+  };
+
+  // handler to continue existing draft
+  const continueDraft = () => {
+    if (!existingAppId) return;
+    navigate("/ocr", {
+      state: { applicationId: existingAppId },
+    });
+  };
 
   const handleLogout = () => {
     const confirmLogout = window.confirm("Are you sure you want to log out?");
@@ -118,12 +144,29 @@ export default function HomePage() {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                 <span className="status-badge pending">Pending</span>
-                <button
+                {/* <button
                   onClick={() => navigate("/ocr")}
                   className="start-button"
                 >
                   Start Form →
-                </button>
+                </button> */}
+                {/* <button onClick={handleStart} className="start-button">
+                  Start Form →
+                </button> */}
+                {existingAppId ? (
+                  <div className="button-group">
+                    <button onClick={continueDraft} className="btn primary">
+                      Continue Draft →
+                    </button>
+                    <button onClick={startNew} className="btn secondary">
+                      Start New Application
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={startNew} className="btn primary">
+                    Start Application →
+                  </button>
+                )}
               </div>
             </div>
           </section>

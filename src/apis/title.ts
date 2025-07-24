@@ -1,13 +1,13 @@
 // src/api/title.ts
 import { getAPIBaseURL } from "./config";
 
-export async function postTitleOCR(file: File, userId: string) {
+export async function postTitleOCR(file: File, applicationId: string) {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("user_id", userId);
+  formData.append("application_id", applicationId);
 
   const baseURL = await getAPIBaseURL();
-  const response = await fetch(`${baseURL}/title/ocr`, {
+  const response = await fetch(`${baseURL}/api/title/ocr`, {
     method: "POST",
     body: formData,
   });
@@ -20,9 +20,9 @@ export async function postTitleOCR(file: File, userId: string) {
   return await response.json();
 }
 
-export async function getLatestTitleOCR(userId: string) {
+export async function getLatestTitleOCR(applicationId: string) {
   const baseURL = await getAPIBaseURL();
-  const response = await fetch(`${baseURL}/title/latest?user_id=${userId}`);
+  const response = await fetch(`${baseURL}/api/title/latest?application_id=${applicationId}`);
 
   if (!response.ok) {
     const errData = await response.json();

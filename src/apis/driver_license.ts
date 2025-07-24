@@ -1,9 +1,9 @@
 // src/apis/driver_license.ts
 import { getAPIBaseURL } from "./config";
 
-export async function getLatestOCR(userId: string) {
+export async function getLatestOCR(applicationId: string) {
   const baseURL = await getAPIBaseURL();
-  const url = `${baseURL}/api/driver_license/latest?user_id=${encodeURIComponent(userId)}`;
+  const url = `${baseURL}/api/driverlicense/latest?application_id=${applicationId}`;
   const response = await fetch(url, {
     credentials: "include",
   });
@@ -15,13 +15,14 @@ export async function getLatestOCR(userId: string) {
   return await response.json();
 }
 
-export async function postOCR(file: File, userId: string) {
+export async function postOCR(file: File, applicationId: string) {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("user_id", userId);
+  // formData.append("user_id", userId);
+  formData.append("application_id", applicationId); // 使用 application_id 替代 user_id
 
   const baseURL = await getAPIBaseURL();
-  const url = `${baseURL}/api/driver_license/ocr`;
+  const url = `${baseURL}/api/driverlicense/ocr`;
   const response = await fetch(url, {
     method: "POST",
     credentials: "include",    

@@ -1,5 +1,5 @@
 // src/pages/OCRPage.tsx
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, useLocation } from "react-router-dom";
 import { useState, useRef } from "react";
 import type { DragEvent, ChangeEvent } from "react";
 import { postOCR, getLatestOCR } from "../apis/driver_license";
@@ -22,10 +22,10 @@ interface OcrData {
 
 export default function OCRPage() {
   const navigate = useNavigate();
-  const { user, loading:authLoading} = useAuth();
-  const userId = user?.user_id;
+  const { user, loading: authLoading } = useAuth();
+  // const userId = user?.user_id;
   // check if userId is available
-  console.log("[DEBUG] userId:", userId);
+  // console.log("[DEBUG] userId:", userId);
   if (authLoading) {
     return <div className="loading">Loading user info...</div>;
   }
@@ -34,6 +34,15 @@ export default function OCRPage() {
     return <Navigate to="/login" replace />;
   }
 
+  // 1) 从跳转时传过来的 state 里拿 applicationId
+  const { state } = useLocation();
+  const applicationId = state?.applicationId as string;
+  console.log("[DEBUG] applicationId:", applicationId);
+
+  if (!applicationId) {
+    // 如果没有 applicationId，就重定向回首页让用户重新开始
+    return <Navigate to="/" replace />;
+  }
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -121,7 +130,8 @@ export default function OCRPage() {
   };
 
   const handleFile = async (fileOrBlob: File | Blob | null) => {
-    if (!fileOrBlob || !userId) return;
+    // if (!fileOrBlob || !userId) return;
+    if (!fileOrBlob || !applicationId) return;
 
     let file: File;
     if (fileOrBlob instanceof File) {
@@ -141,7 +151,8 @@ export default function OCRPage() {
     createPreview(file);
 
     try {
-      const data = await postOCR(file, userId);
+      // const data = await postOCR(file, userId);
+      const data = await postOCR(file, applicationId);
       console.log("[DEBUG] OCR response:", data); // 👈 添加这行
       setOcrData({
         first_name: data.first_name,
@@ -274,15 +285,19 @@ export default function OCRPage() {
 
           <button
             className="btn secondary"
-            disabled={!userId || loading}
+            // disabled={!userId || loading}
+            disabled={!applicationId || loading}
             onClick={async () => {
-              if (!userId) {
-                setError("User ID is missing.");
+              // if (!userId) {
+              if (!applicationId) {
+                // setError("User ID is missing.");
+                setError("Application ID is missing.");
                 return;
               }
               try {
                 setLoading(true);
-                const data = await getLatestOCR(userId);
+                // const data = await getLatestOCR(userId);
+                const data = await getLatestOCR(applicationId);
                 if (data && data.dlNumber) {
                   setOcrData({
                     first_name: data.first_name,
@@ -347,14 +362,14 @@ export default function OCRPage() {
           <button
             className="btn primary"
             disabled={!canContinue || loading}
-            onClick={() => navigate("/upload-title", { state: { ocr: ocrData } })}
+            onClick={() => navigate("/upload-title", { state: { ocr: ocrData, applicationId } })}
           >
             Continue →
           </button>
           <button
             type="button"
             className="btn skip"
-            onClick={() => navigate("/upload-title", { state: { ocr: null } })}
+            onClick={() => navigate("/upload-title", { state: { ocr: null, applicationId } })}
             disabled={loading}
           >
             &gt; Skip for now

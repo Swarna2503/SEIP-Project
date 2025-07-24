@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import type { DragEvent, ChangeEvent } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import { postTitleOCR, getLatestTitleOCR } from "../apis/title";
 import { useAuth } from "../hooks/auth";
 import CameraCapture from "../components/CameraCapture";
@@ -54,7 +54,19 @@ export default function TitleUploadPage() {
   const { user } = useAuth();
   const userId = user?.user_id;
 
-  const { ocr } = (useLocation().state as LocationState) || { ocr: null };
+  // 🛠 一次性从 location.state 取出 ocr 和 applicationId
+  const { state } = useLocation() as {
+    state: { ocr: { name: string } | null; applicationId: string };
+  };
+  const { ocr, applicationId } = state;
+  console.log("[DEBUG] ocr, applicationId:", ocr, applicationId);
+
+  // 2) 如果没有 applicationId，重定向回首页
+  if (!applicationId) {
+    return <Navigate to="/" replace />;
+  }
+
+  // const { ocr } = (useLocation().state as LocationState) || { ocr: null };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -118,7 +130,8 @@ export default function TitleUploadPage() {
   // Handle file selection from any source
   const handleFile = async (chosen: File | Blob | null) => {
     if (!chosen) return;
-    if (!userId) {
+    // if (!userId) {
+    if(!applicationId) {
       setOcrError("User not logged in. Please log in again.");
       return;
     }
@@ -143,7 +156,8 @@ export default function TitleUploadPage() {
     createPreview(pickedFile);
 
     try {
-      const data = await postTitleOCR(pickedFile, userId);
+      // const data = await postTitleOCR(pickedFile, userId);
+      const data = await postTitleOCR(pickedFile, applicationId);
       setTitleOcrData(data.ocr_result);
     } catch (err: any) {
       setOcrError(err.message || "OCR processing failed");
@@ -186,17 +200,27 @@ export default function TitleUploadPage() {
 
   const handleNext = () =>
     navigate("/responsive-form", {
-      state: { ocr, titleFile: file, titleOcr: titleOcrData },
+      // state: { ocr, titleFile: file, titleOcr: titleOcrData },
+      state: { ocr, titleFile: file, titleOcr: titleOcrData, applicationId },
     });
 
   const handleSkip = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     navigate("/responsive-form", {
-      state: { ocr, titleFile: null, titleOcr: null },
+      // state: { ocr, titleFile: null, titleOcr: null },
+      state: { ocr, titleFile: null, titleOcr: null, applicationId },
     });
   };
 
-  const validationPassed = file !== null && !fileError;
+  // const validationPassed = file !== null && !fileError;
+  // 新版：有 file 或者 有 titleOcrData 就通过
+  const validationPassed =
+    !fileError &&
+    (
+      file !== null ||
+      Object.keys(titleOcrData).length > 0
+    );
+
   console.log(titleOcrData)
 
   return (
@@ -299,13 +323,15 @@ export default function TitleUploadPage() {
           <button
             className="btn secondary"
             onClick={async () => {
-              if (!userId) {
+              // if (!userId) {
+              if (!applicationId) {
                 setOcrError("Please log in first.");
                 return;
               }
               try {
                 setIsUploading(true);
-                const data = await getLatestTitleOCR(userId);
+                // const data = await getLatestTitleOCR(userId);
+                const data = await getLatestTitleOCR(applicationId);
                 if (data && data.ocr_result) {
                   setTitleOcrData(data.ocr_result);
                   setOcrError(null);
