@@ -31,10 +31,6 @@ export default function HomePage() {
   const [existingAppId, setExistingAppId] = useState<string | null>(null);
   const [loadingAppCheck, setLoadingAppCheck] = useState(true);
 
-  if (loadingAppCheck) {
-    return <div className="loading">Checking for draft…</div>;
-  }
-
   // the selected ID type is stored in sessionStorage
   const [selectedIdType, setSelectedIdType] = useState(() => {
     return sessionStorage.getItem("selectedIdType") || "";
@@ -45,26 +41,29 @@ export default function HomePage() {
     sessionStorage.setItem("selectedIdType", selectedIdType);
   }, [selectedIdType]);
 
-  // on mount (or whenever userId changes), fetch any unfinished draft
+  // 3) Fetch draft on mount / user change
   useEffect(() => {
-    if (!userId) return;
-    setLoadingAppCheck(true);
+    if (!userId) {
+      setLoadingAppCheck(false);
+      return;
+    }
     getApplicationByUser(userId)
       .then(res => {
         if (res.ok && res.data.application_id) {
           setExistingAppId(res.data.application_id);
-        } else {
-          setExistingAppId(null);
         }
       })
       .catch(() => {
-        setExistingAppId(null);
+        /* swallow */
       })
       .finally(() => {
         setLoadingAppCheck(false);
       });
   }, [userId]);
 
+  if (loadingAppCheck) {
+    return <div className="loading">Checking for draft…</div>;
+  }
   // handler to create a new application and navigate
   const startNew = async () => {
     if (!userId) return;
