@@ -1,9 +1,10 @@
-// src/api/driver_license.ts
+// src/apis/driver_license.ts
 import { getAPIBaseURL } from "./config";
 
 export async function getLatestOCR(userId: string) {
   const baseURL = await getAPIBaseURL();
-  const response = await fetch(`${baseURL}/driverlicense/latest?user_id=${userId}`, {
+  const url = `${baseURL}/api/driver_license/latest?user_id=${encodeURIComponent(userId)}`;
+  const response = await fetch(url, {
     credentials: "include",
   });
 
@@ -20,13 +21,15 @@ export async function postOCR(file: File, userId: string) {
   formData.append("user_id", userId);
 
   const baseURL = await getAPIBaseURL();
-  const response = await fetch(`${baseURL}/driverlicense/ocr`, {
+  const url = `${baseURL}/api/driver_license/ocr`;
+  const response = await fetch(url, {
     method: "POST",
+    credentials: "include",    
     body: formData,
   });
 
   if (!response.ok) {
-    const errData = await response.json();
+    const errData = await response.json().catch(() => ({}));
     throw new Error(errData.message || "OCR failed");
   }
 

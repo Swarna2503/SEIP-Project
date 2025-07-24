@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/auth";
+import { createApplication, getApplicationByUser } from "../apis/application";
 import "../styles/home.css";
 
 const idCategories = [
@@ -33,6 +34,28 @@ export default function HomePage() {
   useEffect(() => {
     sessionStorage.setItem("selectedIdType", selectedIdType);
   }, [selectedIdType]);
+
+  // Start application handler
+  // const handleStart = async () => {
+  //   const userId = user?.user_id;
+  //   if (!userId) return;
+
+  //   const res = await getApplicationByUser(userId);
+  //   if (res.ok && res.data?.application_id) {
+  //     // 已有草稿，询问是否继续
+  //     const cont = window.confirm("您已有未完成申请，是否继续？");
+  //     if (cont) {
+  //       navigate("/ocr", { state: { applicationId: res.data.application_id } });
+  //     } else {
+  //       const newRes = await createApplication(userId);
+  //       navigate("/ocr", { state: { applicationId: newRes.data.application_id } });
+  //     }
+  //   } else {
+  //     // 没有草稿，创建新的
+  //     const newRes = await createApplication(userId);
+  //     navigate("/ocr", { state: { applicationId: newRes.data.application_id } });
+  //   }
+  // };
 
   const handleLogout = () => {
     const confirmLogout = window.confirm("Are you sure you want to log out?");

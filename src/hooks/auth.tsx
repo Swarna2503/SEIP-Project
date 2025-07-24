@@ -41,25 +41,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user !== null) return; // Skip if user is already set
     
     setLoading(true);
+    // getAPIBaseURL().then((baseURL) => {
+    //   fetch(`${baseURL}/api/profile`, { credentials: "include" })
+    //     .then(res => {
+    //       if (!res.ok) throw new Error("Didn't log in yet");
+    //       return res.json();
+    //     })
+    //     .then((data: User) => setUser(data))
+    //     .catch(() => setUser(null))
+    //     .finally(() => setLoading(false));
+    // });
+    // ---------------------------------------------------------------------------------
     getAPIBaseURL().then((baseURL) => {
-      fetch(`${baseURL}/api/profile`, { credentials: "include" })
+      const profileURL = `${baseURL}/api/profile`;
+      console.log("[DEBUG] Will fetch profile from:", profileURL);
+      fetch(profileURL, { credentials: "include" })
         .then(res => {
+          console.log("[DEBUG] profile response status:", res.status, res.statusText);
           if (!res.ok) throw new Error("Didn't log in yet");
           return res.json();
         })
-        .then((data: User) => setUser(data))
-        .catch(() => setUser(null))
+        .then((data: User) => {
+          console.log("[DEBUG] profile data:", data);
+          setUser(data);
+        })
+        .catch((err) => {
+          console.warn("[DEBUG] profile error:", err);
+          setUser(null);
+        })
         .finally(() => setLoading(false));
     });
+    // ---------------------------------------------------------------------------------
   }, []); // Remove navigate dependency
 
+  // async function login(email: string, password: string) {
+  //   setLoading(true);
+  //   setError(null);
+  //   try {
+  //     const { ok, data } = await loginApi(email, password);
+  //     if (!ok) throw new Error(data.error || "Login failed");
+  //     setUser(data);
+  //     navigate("/", { replace: true });
+  //   } catch (err: any) {
+  //     setError(err.message);
+  //     throw err;
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
+  // test
   async function login(email: string, password: string) {
     setLoading(true);
     setError(null);
     try {
       const { ok, data } = await loginApi(email, password);
       if (!ok) throw new Error(data.error || "Login failed");
-      setUser(data);
+
+      // --- 新增：登录成功后去获取 profile ---
+      const baseURL = await getAPIBaseURL();
+      const res = await fetch(`${baseURL}/api/profile`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to load profile");
+      const profile = await res.json() as User;
+
+      setUser(profile);                       // ← 这里用 profile 而不是 loginApi 的 data
       navigate("/", { replace: true });
     } catch (err: any) {
       setError(err.message);
@@ -68,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   }
+
 
   async function register(email: string, password: string, confirmPassword: string) {
     setLoading(true);

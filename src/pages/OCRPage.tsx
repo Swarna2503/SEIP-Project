@@ -1,5 +1,5 @@
 // src/pages/OCRPage.tsx
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useState, useRef } from "react";
 import type { DragEvent, ChangeEvent } from "react";
 import { postOCR, getLatestOCR } from "../apis/driver_license";
@@ -22,8 +22,18 @@ interface OcrData {
 
 export default function OCRPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading:authLoading} = useAuth();
   const userId = user?.user_id;
+  // check if userId is available
+  console.log("[DEBUG] userId:", userId);
+  if (authLoading) {
+    return <div className="loading">Loading user info...</div>;
+  }
+
+  if (!user?.user_id) {
+    return <Navigate to="/login" replace />;
+  }
+
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -132,6 +142,7 @@ export default function OCRPage() {
 
     try {
       const data = await postOCR(file, userId);
+      console.log("[DEBUG] OCR response:", data); // 👈 添加这行
       setOcrData({
         first_name: data.first_name,
         last_name: data.last_name,
@@ -303,7 +314,7 @@ export default function OCRPage() {
         {loading && <p className="status-text">Running OCR, please wait…</p>}
         {error && <p className="status-text error">{error}</p>}
 
-        {!loading && ocrData.name && (
+        {!loading && ocrData.name&& (
           <div className="ocr-data">
             <p><strong>Name:</strong> {ocrData.name || "N/A"}</p>
             <p><strong>Address:</strong> {ocrData.address || "N/A"}</p>
