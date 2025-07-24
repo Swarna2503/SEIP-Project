@@ -73,12 +73,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const { ok, data } = await registerApi(email, password, confirmPassword);
+      const { ok, data, status} = await registerApi(email, password, confirmPassword);
       if (!ok) {
         // Handle specific error cases based on the response
-        if (data.detail && data.detail.includes("already exists")) {
+        if (status === 400 && data.detail && data.detail.includes("already exists")) {
           throw new Error("EMAIL_EXISTS");
-        } else if (data.detail && data.detail.includes("not verified")) {
+          // && data.detail && data.detail.includes("not verified")
+        } else if (status === 409 ) {
+          navigate('/verify-email', { state: { email } });
           throw new Error("EMAIL_NOT_VERIFIED");
         } else {
           throw new Error(data.message || data.detail || "Registration failed");
