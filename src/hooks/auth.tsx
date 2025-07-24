@@ -90,30 +90,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   //   }
   // }
   // test
-  async function login(email: string, password: string) {
-    setLoading(true);
-    setError(null);
-    try {
-      const { ok, data } = await loginApi(email, password);
-      if (!ok) throw new Error(data.error || "Login failed");
+  // inside AuthProvider
+async function login(email: string, password: string) {
+  setLoading(true);
+  setError(null);
+  try {
+    // 1) hit /api/login (sets the cookie)
+    const { ok, data } = await loginApi(email, password);
+    if (!ok) throw new Error(data.error || "Login failed");
 
-      // --- 新增：登录成功后去获取 profile ---
-      const baseURL = await getAPIBaseURL();
-      const res = await fetch(`${baseURL}/api/profile`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to load profile");
-      const profile = await res.json() as User;
+    // 2) now that the cookie is set, grab the profile
+    const baseURL = await getAPIBaseURL();
+    const res2 = await fetch(`${baseURL}/api/profile`, { credentials: "include" });
+    if (!res2.ok) throw new Error("Failed to fetch profile");
+    const me = await res2.json();                // { user_id, email }
 
-      setUser(profile);                       // ← 这里用 profile 而不是 loginApi 的 data
-      navigate("/", { replace: true });
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+    // 3) populate your context and navigate
+    setUser({ user_id: me.user_id, email: me.email });
+    navigate("/", { replace: true });
+  } catch (err: any) {
+    setError(err.message);
+    throw err;
+  } finally {
+    setLoading(false);
   }
+}
+
+  // async function login(email: string, password: string) {
+  //   setLoading(true);
+  //   setError(null);
+  //   try {
+  //     const { ok, data } = await loginApi(email, password);
+  //     if (!ok) throw new Error(data.error || "Login failed");
+
+  //     // --- 新增：登录成功后去获取 profile ---
+  //     const baseURL = await getAPIBaseURL();
+  //     const res = await fetch(`${baseURL}/api/profile`, {
+  //       credentials: "include",
+  //     });
+  //     if (!res.ok) throw new Error("Failed to load profile");
+  //     const profile = await res.json() as User;
+
+  //     setUser(profile);                       // ← 这里用 profile 而不是 loginApi 的 data
+  //     navigate("/", { replace: true });
+  //   } catch (err: any) {
+  //     setError(err.message);
+  //     throw err;
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
 
 
   async function register(email: string, password: string, confirmPassword: string) {
