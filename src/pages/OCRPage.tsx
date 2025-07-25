@@ -34,13 +34,11 @@ export default function OCRPage() {
     return <Navigate to="/login" replace />;
   }
 
-  // 1) 从跳转时传过来的 state 里拿 applicationId
   const { state } = useLocation();
   const applicationId = state?.applicationId as string;
   console.log("[DEBUG] applicationId:", applicationId);
 
   if (!applicationId) {
-    // 如果没有 applicationId，就重定向回首页让用户重新开始
     return <Navigate to="/" replace />;
   }
 
@@ -67,32 +65,6 @@ export default function OCRPage() {
     type: string;
   } | null>(null);
   const [showCamera, setShowCamera] = useState(false);
-
-  // Load latest OCR from backend
-  // useEffect(() => {
-  //   const fetchLatest = async () => {
-  //     if (!userId) return;
-  //     try {
-  //       const data = await getLatestOCR(userId);
-  //       if (data && data.dlNumber) {
-  //         setOcrData({
-  //           first_name: data.first_name,
-  //           last_name: data.last_name,
-  //           name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
-  //           address: data.address,
-  //           dlNumber: data.dlNumber,
-  //           state: data.state,
-  //           street_address: data.street_address,
-  //           zip_code: data.zip_code,
-  //           city: data.city,
-  //         });
-  //       }
-  //     } catch {
-  //       console.warn("No previous OCR found or fetch failed.");
-  //     }
-  //   };
-  //   fetchLatest();
-  // }, [userId]);
 
   // File validation
   const validateFile = (file: File): boolean => {
@@ -153,7 +125,7 @@ export default function OCRPage() {
     try {
       // const data = await postOCR(file, userId);
       const data = await postOCR(file, applicationId);
-      console.log("[DEBUG] OCR response:", data); // 👈 添加这行
+      console.log("[DEBUG] OCR response:", data); 
       setOcrData({
         first_name: data.first_name,
         last_name: data.last_name,

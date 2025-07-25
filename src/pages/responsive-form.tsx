@@ -1,89 +1,119 @@
 import  { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Responsive130UForm from "../components/Responsive130UForm";
+import { fields } from "../components/Responsive130UForm";
+import { STATE_NAMES } from "../utils/stateAbbreviations";
 import "../styles/responsive-form.css";
 
 interface LocationState {
   ocr?: any;
   titleOcr?: any;
   titleFile?: File;
+  selectedIdType?: string;
 }
+
+function getStateAbbrFromFullNameOrAbbr(input: string): string {
+  if (!input) return "";
+  const trimmed = input.trim();
+  // 直接是缩写
+  if (STATE_NAMES[trimmed.toUpperCase()]) return trimmed.toUpperCase();
+  // 是全名，查映射
+  for (const [abbr, full] of Object.entries(STATE_NAMES)) {
+    if (full.toLowerCase() === trimmed.toLowerCase()) {
+      return abbr;
+    }
+  }
+  return trimmed; // fallback
+}
+
 
 export default function ResponsiveFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as LocationState | undefined;
-  const { ocr, titleOcr, titleFile } = state ?? {};
+  const { ocr: dlOcr, titleOcr, titleFile } = state ?? {};
+  const [selectedIdType, setSelectedIdType] = useState("");
+  useEffect(() => {
+    const storedIdType = sessionStorage.getItem("selectedIdType");
+    if (storedIdType) {
+      setSelectedIdType(storedIdType);
+    }
+  }, []);
+  useEffect(() => {
+    console.log("dlOcr data:", dlOcr);
+    console.log("titleOcr data:", titleOcr);
+    console.log("mapped formState:", formState);
+  }, []);
+
   
   const [formValid, setFormValid] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showAllErrors, setShowAllErrors] = useState(false);
 
-  function mapOcrToFormValues(dl: any, title: any): Record<string, string | boolean> {
+    function mapOcrToFormValues(dl: any, titleOcr: any, idType: string): Record<string, any> {
+    // 1) define defaults for the form fields
+    const defaults: Record<string, string | boolean> = Object.fromEntries(
+      fields.map(f => [f.id, f.type === "checkbox" ? false : ""])
+    );
+
+    // Map selectedIdType to corresponding checkbox key
+    const idTypeMap: Record<string, keyof typeof defaults> = {
+      "U.S. Driver License/ID Card": "usDriverLicense",
+      "US Military ID":              "usMilitaryId",
+      "Passport":                  "passport",
+      "NATO ID":                     "natoId",
+      "Immigration":                "uscisId",
+    };
+
+    // Prepare ID checkbox group
+    const idCheckboxes: Record<string, boolean> = Object.fromEntries(
+      Object.keys(idTypeMap).map(key => [idTypeMap[key], false])
+    );
+
+    if (idType && idTypeMap[idType]) {
+      idCheckboxes[idTypeMap[idType]] = true;
+    }
+
+    // 2) auto-fill values from OCR data
+    const fullAddress = titleOcr?.owner_address ?? "";
+    const parts = fullAddress.split(",").map((s: string) => s.trim());
+    const previousCity  = parts[1] || "";
+    // const previousState = parts[2]?.split(" ")[0] || "";
+    const rawState = parts[2]?.split(" ")[0] ?? "";
+    const previousOwnerState = getStateAbbrFromFullNameOrAbbr(rawState);
+    console.log("Parsed state:", previousOwnerState, "from raw:", rawState);
+
+    const autoFill: Record<string, any> = {
+      // Responsive130UForm checkbox fields
+      ...idCheckboxes,
+      // car title information
+      vehicleIdentificationNumber: titleOcr?.vehicle_identification_number ?? "",
+      vehicleYear:                 titleOcr?.year_model?.toString()           ?? "",
+      vehicleMake:                 titleOcr?.make_of_vehicle                   ?? "",
+      vehicleBodyStyle:            titleOcr?.body_style                       ?? "",
+      vehicleModel:                titleOcr?.model                            ?? "",
+      emptyWeight:                 titleOcr?.mfg_capacity_in_tons?.toString() ?? "",
+      // previous owner
+      previousOwner:               titleOcr?.owner_name                   ?? "",
+      previousCity,
+      previousOwnerState,
+      // driver license information
+      photoIdNumber:               dl?.dlNumber ?? "",
+      applicantName:               dl?.first_name ?? "",
+      applicantLastName:           dl?.last_name ?? "",
+      applicantMailingAddress:     dl?.street_address ?? dl?.address ?? "",
+      applicantCity:               dl?.city ?? "",
+      applicantState:              dl?.state ?? "",
+      applicantZip:                dl?.zip_code ?? "",
+    };
+
+
+    // 4) merge: defaults → autoFill → idMap
     return {
-      vehicleIdentificationNumber: title?.vehicle_id_number ?? "",
-      vehicleYear: title?.year_model ?? "",
-      vehicleMake: title?.make_of_vehicle ?? "",
-      vehicleBodyStyle: title?.body_style ?? "",
-      vehicleModel: title?.model ?? "",
-      texasLicensePlate: title?.license_number ?? "",
-      odometerReading: title?.odometer_reading ?? "",
-      lienholderNameAddress: title?.first_lienholder ?? "",
-      previousOwner: title?.previous_owner ?? "",
-      applicantName: dl?.first_name ?? "",
-      applicantLastName: dl?.last_name ?? "",
-      applicantMailingAddress: dl?.address ?? "",
-      applicantState: dl?.state ?? "",
-      photoIdNumber: dl?.dlNumber ?? "",
-      titleRegistration: false,
-      titleOnly: false,
-      registrationPurposesOnly: false,
-      nonTitleRegistration: false,
-      vehicleDescription: false,
-      addRemoveLien: false,
-      otherReason: false,
-      notActualMileage: false,
-      exceedsMechanicalLimits: false,
-      exemptMileage: false,
-      individual: false,
-      business: false,
-      government: false,
-      trust: false,
-      nonProfit: false,
-      usDriverLicense: false,
-      passport: false,
-      uscisId: false,
-      natoId: false,
-      usMilitaryId: false,
-      militaryStatusId: false,
-      usDeptStateId: false,
-      usDeptHomelandId: false,
-      emailConsent: false,
-      attachVTR216: false,
-      attachVTR267: false,
-      noElectronicTitle: false,
-      rentalPermit: false,
-      dealerOrLessor: false,
-      tradeIn: false,
-      additionalTradeIns: false,
-      salesAndUseTax: false,
-      penalty5Percent: false,
-      penalty10Percent: false,
-      newResidentTax: false,
-      evenTradeTax: false,
-      giftTax: false,
-      salvageFee: false,
-      emissionsFee25Diesel: false,
-      emissionsFee1Diesel: false,
-      taxExemption: false,
-      applicationFee: false,
-      inspectionVerified: false,
-      unrecoveredStolen: false,
-      correctedTitleLost: false,
+      ...defaults,
+      ...autoFill,
     };
   }
-
-  const mappedOcr = mapOcrToFormValues(ocr ?? {}, titleOcr ?? {});
 
   useEffect(() => {
     if (!state) {
@@ -91,7 +121,10 @@ export default function ResponsiveFormPage() {
     }
   }, [state, navigate]);
 
-  const [formState, setFormState] = useState<Record<string, any>>({});
+  // initialize form state with OCR data
+  const [formState, setFormState] = useState(() =>
+    mapOcrToFormValues(dlOcr ?? {}, titleOcr ?? {}, selectedIdType)
+  );
 
   const handleFormChange = (newState: Record<string, any>, isValid: boolean, errors: Record<string, string>) => {
     setFormState(newState);
@@ -119,7 +152,7 @@ export default function ResponsiveFormPage() {
 
     navigate("/signature", {
       state: { 
-        ocr, 
+        dlOcr, 
         titleFile, 
         titleForm: formState,
         signatures: {
@@ -148,7 +181,7 @@ export default function ResponsiveFormPage() {
             onChange={handleFormChange}
             sectionClass="section-card"
             gridClass="fields-grid"
-            initialValues={mappedOcr}
+            initialValues={formState}
             showAllErrors={showAllErrors}
           />
         </div>

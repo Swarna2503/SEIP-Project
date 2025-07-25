@@ -112,7 +112,7 @@ const validators = {
   }
 };
 
-const fields: FieldDef[] = [
+export const fields: FieldDef[] = [
   // 0–3: "Applying for" checkboxes
   { 
     id: "titleRegistration",           
@@ -801,6 +801,8 @@ export default function Responsive130UForm({
     });
     return state;
   });
+
+  console.log("formState[previousOwnerState] = ", formState["previousOwnerState"]);
 
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});

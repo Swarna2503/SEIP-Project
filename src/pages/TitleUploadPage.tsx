@@ -44,11 +44,6 @@ export interface TitleOcrData {
   form_revision?: string;
 }
 
-
-// interface LocationState {
-//   ocr: { name: string } | null;
-// }
-
 export default function TitleUploadPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -62,14 +57,12 @@ export default function TitleUploadPage() {
     return <Navigate to="/login" replace />;
   }
 
-  // 🛠 一次性从 location.state 取出 ocr 和 applicationId
   const { state } = useLocation() as {
     state: { ocr: { name: string } | null; applicationId: string };
   };
   const { ocr, applicationId } = state;
   console.log("[DEBUG] ocr, applicationId:", ocr, applicationId);
 
-  // 2) 如果没有 applicationId，重定向回首页
   if (!applicationId) {
     return <Navigate to="/" replace />;
   }
