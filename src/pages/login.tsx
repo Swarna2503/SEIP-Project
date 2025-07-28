@@ -1,5 +1,5 @@
 // src/pages/LoginPage.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/auth";
 import "../styles/login.css";
@@ -24,6 +24,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false); // New state for password visibility
+  const [touched, setTouched] = useState(false);
+  const { googleLogin } = useAuth();
   const navigate = useNavigate();
 
   const validateEmail = (email: string) => {
@@ -39,12 +41,12 @@ export default function LoginPage() {
     return "";
   };
 
-  useEffect(() => {
-    setErrors({
-      email: validateEmail(email),
-      password: validatePassword(password),
-    });
-  }, [email, password]);
+  // useEffect(() => {
+  //   setErrors({
+  //     email: validateEmail(email),
+  //     password: validatePassword(password),
+  //   });
+  // }, [email, password]);
 
   const canSubmit =
     email.trim() !== "" &&
@@ -54,6 +56,12 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTouched(true);
+    const newErrors = {
+      email: validateEmail(email),
+      password: validatePassword(password),
+    };
+    setErrors(newErrors);
     if (!canSubmit) return;
     try {
       await login(email, password);
@@ -77,7 +85,8 @@ export default function LoginPage() {
           disabled={loading}
           className={errors.email ? "input-error" : ""}
         />
-        {errors.email && <p className="error-text">{errors.email}</p>}
+        {/* {errors.email && <p className="error-text">{errors.email}</p>} */}
+        {touched && errors.email && <p className="error-text">{errors.email}</p>}
 
         <label htmlFor="password">Password</label>
         {/* Password input container */}
@@ -101,8 +110,10 @@ export default function LoginPage() {
             {showPassword ? <EyeClosedIcon /> : <EyeOpenIcon />}
           </button>
         </div>
-        {errors.password && <p className="error-text">{errors.password}</p>}
+        {/* {errors.password && <p className="error-text">{errors.password}</p>} */}
+        {touched && errors.password && <p className="error-text">{errors.password}</p>}
 
+        {/* Forgot password link */}
         <div className="forgot-password-container">
           <button 
             type="button"
@@ -114,7 +125,7 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <button type="submit" disabled={!canSubmit || loading}>
+        <button type="submit" disabled={loading}>
           Continue →
         </button>
 
@@ -128,6 +139,15 @@ export default function LoginPage() {
             Register
           </button>
         </p>
+
+        <button
+          type="button"
+          onClick={() => googleLogin()}
+          className="google-login-button"
+          disabled={loading}
+        >
+          Sign in with Google
+        </button>
       </form>
     </div>
   );

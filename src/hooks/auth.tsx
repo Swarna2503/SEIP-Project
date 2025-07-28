@@ -10,7 +10,11 @@ import { useNavigate } from "react-router-dom";
 import { login as loginApi } from "../apis/login";
 import { register as registerApi } from "../apis/register";
 import { requestPasswordReset, resetPassword as resetPasswordAPI } from "../apis/reset_password";
-import { getAPIBaseURL } from "../apis/config"; 
+// import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "../firebase";
+import { firebaseLogin } from "../apis/google_login";
+import { getAPIBaseURL } from "../apis/config";
 
 interface User {
   user_id: string;
@@ -26,6 +30,7 @@ interface AuthContextType {
   logout: () => void;
   sendPasswordResetEmail: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
+  googleLogin: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,17 +46,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user !== null) return; // Skip if user is already set
     
     setLoading(true);
-    // getAPIBaseURL().then((baseURL) => {
-    //   fetch(`${baseURL}/api/profile`, { credentials: "include" })
-    //     .then(res => {
-    //       if (!res.ok) throw new Error("Didn't log in yet");
-    //       return res.json();
-    //     })
-    //     .then((data: User) => setUser(data))
-    //     .catch(() => setUser(null))
-    //     .finally(() => setLoading(false));
-    // });
-    // ---------------------------------------------------------------------------------
     getAPIBaseURL().then((baseURL) => {
       const profileURL = `${baseURL}/api/profile`;
       console.log("[DEBUG] Will fetch profile from:", profileURL);
@@ -71,26 +65,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         .finally(() => setLoading(false));
     });
-    // ---------------------------------------------------------------------------------
   }, []); // Remove navigate dependency
 
-  // async function login(email: string, password: string) {
-  //   setLoading(true);
-  //   setError(null);
-  //   try {
-  //     const { ok, data } = await loginApi(email, password);
-  //     if (!ok) throw new Error(data.error || "Login failed");
-  //     setUser(data);
-  //     navigate("/", { replace: true });
-  //   } catch (err: any) {
-  //     setError(err.message);
-  //     throw err;
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }
-  // test
-  // inside AuthProvider
+// -----------------------------------------Google login function---------------------------------------------------------------
+async function googleLogin() {
+  setLoading(true);
+  setError(null);
+  try {
+    // Google login flow
+    const result = await signInWithPopup(auth, provider);
+    const idToken = await result.user.getIdToken();
+
+    // transfer the token to backend and set the cookie
+    const { ok, data } = await firebaseLogin(idToken);
+    if (!ok) throw new Error(data.detail || "Google login failed");
+
+    // Get the user profile
+    const baseURL = await getAPIBaseURL();
+    const res2 = await fetch(`${baseURL}/api/profile`, {
+      credentials: "include",
+    });
+    if (!res2.ok) throw new Error("Get profile failed");
+    const me = await res2.json();
+
+    // set user and navigate
+    setUser(me);
+    navigate("/", { replace: true });
+  } catch (err: any) {
+    setError(err.message);
+    throw err;
+  } finally {
+    setLoading(false);
+  }
+}
+// -------------------------------------Google login function end-----------------------------------------------------------
+
 async function login(email: string, password: string) {
   setLoading(true);
   setError(null);
@@ -115,32 +124,6 @@ async function login(email: string, password: string) {
     setLoading(false);
   }
 }
-
-  // async function login(email: string, password: string) {
-  //   setLoading(true);
-  //   setError(null);
-  //   try {
-  //     const { ok, data } = await loginApi(email, password);
-  //     if (!ok) throw new Error(data.error || "Login failed");
-
-  //     // --- 新增：登录成功后去获取 profile ---
-  //     const baseURL = await getAPIBaseURL();
-  //     const res = await fetch(`${baseURL}/api/profile`, {
-  //       credentials: "include",
-  //     });
-  //     if (!res.ok) throw new Error("Failed to load profile");
-  //     const profile = await res.json() as User;
-
-  //     setUser(profile);                       // ← 这里用 profile 而不是 loginApi 的 data
-  //     navigate("/", { replace: true });
-  //   } catch (err: any) {
-  //     setError(err.message);
-  //     throw err;
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }
-
 
   async function register(email: string, password: string, confirmPassword: string) {
     setLoading(true);
@@ -229,7 +212,8 @@ async function login(email: string, password: string) {
       register, 
       logout,
       sendPasswordResetEmail,
-      resetPassword
+      resetPassword,
+      googleLogin,
     }}>
       {children}
     </AuthContext.Provider>
