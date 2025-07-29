@@ -1,47 +1,19 @@
-// // src/api/application.ts
-
-// import { fetchWrapper } from "./fetchWrapper";
-
-// export async function createApplication(user_id: string) {
-//   const formData = new FormData();
-//   formData.append("user_id", user_id);
-
-//   const res = await fetchWrapper("/application/create", {
-//     method: "POST",
-//     body: formData,
-//     headers: {} 
-//   });
-
-//   return res;
-// }
-
-// export async function getApplicationByUser(user_id: string) {
-//   const res = await fetchWrapper(`/application/by-user/${user_id}`, {
-//     method: "GET",
-//   });
-
-//   return res;
-// }
 // src/api/application.ts
 import { fetchWrapper } from "./fetchWrapper";
 
-// 创建一个新的申请草稿
+// create a new draft
 export async function createApplication(user_id: string) {
-  // 用 FormData 把 user_id 传给后端的 Form(...) 解析器
   const formData = new FormData();
   formData.append("user_id", user_id);
-
-  // path 里不写 /api，fetchWrapper 会自动补上
   const res = await fetchWrapper("/application/create", {
     method: "POST",
     body: formData,
-    // 不需要写 headers，fetchWrapper 已经根据 body instanceof FormData 来跳过 JSON 头
   });
 
   return res;  // { ok, status, data: { application_id, application_display_id, status } }
 }
 
-// 根据 user_id 查询（未提交的）草稿
+// query the draft by user id
 export async function getApplicationByUser(user_id: string) {
   const res = await fetchWrapper(`/application/by-user/${encodeURIComponent(user_id)}`, {
     method: "GET",
@@ -49,7 +21,7 @@ export async function getApplicationByUser(user_id: string) {
   return res;  // { ok, status, data: { application_id?, application_display_id?, status? } }
 }
 
-// 查询历史提交记录
+// query history submit record
 export async function getApplicationHistory(user_id: string) {
   const res = await fetchWrapper(`/application/history/${encodeURIComponent(user_id)}`, {
     method: "GET",
@@ -57,10 +29,18 @@ export async function getApplicationHistory(user_id: string) {
   return res;
 }
 
-// ✅ 新增：获取历史申请记录
+// get history record
 export async function getDraftApplications(user_id: string) {
   const res = await fetchWrapper(`/application/drafts/${encodeURIComponent(user_id)}`, {
     method: "GET",
+  });
+  return res;
+}
+
+// delete application
+export async function deleteApplication(application_id: string) {
+  const res = await fetchWrapper(`/application/${application_id}`, {
+    method: "DELETE",
   });
   return res;
 }

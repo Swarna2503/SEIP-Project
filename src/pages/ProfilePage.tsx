@@ -5,6 +5,7 @@ import {
   createApplication,
   getDraftApplications,
   getApplicationHistory,
+  deleteApplication,
 } from "../apis/application";
 import "../styles/profile.css";
 
@@ -38,6 +39,19 @@ export default function ProfilePage() {
     fetchData();
   }, [user]);
 
+  const handleDelete = async (applicationId: string) => {
+  const confirmDelete = window.confirm("Are you sure you want to delete this draft?");
+  if (!confirmDelete) return;
+
+  const res = await deleteApplication(applicationId);
+  if (res.ok) {
+    setDrafts(prev => prev.filter(app => app.application_id !== applicationId));
+  } else {
+    alert("Failed to delete application.");
+  }
+};
+
+
   const handleContinue = (applicationId: string) => {
     navigate("/ocr", { state: { applicationId } });
   };
@@ -61,6 +75,8 @@ export default function ProfilePage() {
   return (
     <div className="profile-wrapper">
       <h1>👤 Profile</h1>
+      <button onClick={() => navigate("/")} className="back-home-button">🏠 Back to Home</button>
+
 
       {/* Basic Info */}
       <div className="profile-section">
@@ -87,6 +103,9 @@ export default function ProfilePage() {
               <p><strong>Driver License:</strong> {app.driver_license_id ? "📄 Uploaded" : "❌ Missing"}</p>
               <p><strong>Title Document:</strong> {app.title_doc_id ? "📄 Uploaded" : "❌ Missing"}</p>
               <button onClick={() => handleContinue(app.application_id)}>🚗 Continue</button>
+              <button onClick={() => handleDelete(app.application_id)} style={{ marginLeft: "1rem", color: "red" }}>
+                🗑️ Delete
+              </button>
             </div>
           ))
         ) : (
