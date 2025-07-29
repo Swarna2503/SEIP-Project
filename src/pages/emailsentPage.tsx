@@ -85,15 +85,15 @@ export default function EmailSentPage() {
   };
 
   // Format expiration date for display
-  const formatExpiration = (date?: Date) => {
-    if (!date) return '';
-    return new Date(date).toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  // const formatExpiration = (date?: Date) => {
+  //   if (!date) return '';
+  //   return new Date(date).toLocaleString('en-US', {
+  //     month: 'short',
+  //     day: 'numeric',
+  //     hour: '2-digit',
+  //     minute: '2-digit'
+  //   });
+  // };
 
   if (isSent) {
     return (

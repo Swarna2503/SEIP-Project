@@ -102,21 +102,21 @@ const SignatureCanvas = React.forwardRef<any, any>((props, ref) => {
   );
 });
 
-// Mock fillAndFlattenPdf function
-const fillAndFlattenPdf = async (
-  templateBytes: Uint8Array,
-  formData: Record<string, any>,
-  signatures: any[]
-): Promise<Uint8Array> => {
-  // Mock implementation - in real app this would process the PDF
-  console.log('Processing PDF with signatures:', signatures);
-  return templateBytes; // Return original for demo
-};
+// // Mock fillAndFlattenPdf function
+// const fillAndFlattenPdf = async (
+//   templateBytes: Uint8Array,
+//   formData: Record<string, any>,
+//   signatures: any[]
+// ): Promise<Uint8Array> => {
+//   // Mock implementation - in real app this would process the PDF
+//   console.log('Processing PDF with signatures:', signatures);
+//   return templateBytes; // Return original for demo
+// };
 
 export default function SellerSignPage() {
   // Mock router data for demonstration
   const token = 'demo-token-123';
-  const navigate = (path: string) => console.log('Navigate to:', path);
+  // const navigate = (path: string) => console.log('Navigate to:', path);
   const location = { 
     state: null as { pdfData?: string; applicantInfo?: any } | null 
   };
@@ -128,7 +128,7 @@ export default function SellerSignPage() {
   const [signatureName, setSignatureName] = useState('');
   const [signatureDate, setSignatureDate] = useState('');
   const [pdfData, setPdfData] = useState('');
-  const [applicantInfo, setApplicantInfo] = useState<any>({});
+  const [setApplicantInfo] = useState<any>({});
 
   useEffect(() => {
     const loadDocument = () => {
@@ -525,6 +525,8 @@ export default function SellerSignPage() {
               type="text"
               value={signatureDate}
               readOnly
+              title="Signature Date"
+              placeholder="MM/DD/YYYY"
               style={{
                 width: '100%',
                 padding: '14px 16px',
