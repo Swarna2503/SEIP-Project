@@ -22,6 +22,15 @@ export interface Responsive130UFormProps {
   initialValues?: Record<string, string | boolean>;
   showAllErrors?: boolean;
 }
+// get today's calendar
+const getToday = () => {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 
 const STATE_FIELDS = new Set([
   "applicantState",
@@ -78,9 +87,22 @@ const validators = {
     if (value && !/^\d{10}$/.test(value)) return "Must be 10-digit phone number";
     return null;
   },
+  // date: (value: string) => {
+  //   if (value && !/^(0[1-9]|1[0-2])\/\d{2}\/\d{4}$/.test(value))
+  //     return "Must be in MM/DD/YYYY format";
+  //   return null;
+  // },
   date: (value: string) => {
-    if (value && !/^(0[1-9]|1[0-2])\/\d{2}\/\d{4}$/.test(value))
-      return "Must be in MM/DD/YYYY format";
+    if (!value) return null;
+
+    // 支持 MM/DD/YYYY 或 YYYY-MM-DD
+    const mmddyyyy = /^(0[1-9]|1[0-2])\/\d{2}\/\d{4}$/;
+    const yyyymmdd = /^\d{4}-(0[1-9]|1[0-2])-\d{2}$/;
+
+    if (!mmddyyyy.test(value) && !yyyymmdd.test(value)) {
+      return "Must be in MM/DD/YYYY or YYYY-MM-DD format";
+    }
+
     return null;
   },
   signatureBlock: (name: string, date: string, formState: Record<string, any>) => {
@@ -381,6 +403,13 @@ export const fields: FieldDef[] = [
   },
   { id: "dealerGDN", label: "21. Dealer GDN (if applicable)", type: "text" },
   { id: "unitNumber", label: "22. Unit Number (if applicable)", type: "text" },
+
+  {
+    id: "sameMailingAddress",
+    label: "Same as the applicant’s address",
+    type: "checkbox"
+  },
+
   
   // Renewal
   { id: "renewalRecipientFirstName", label: "23. Renewal Recipient First Name", type: "text" },
@@ -393,6 +422,7 @@ export const fields: FieldDef[] = [
     id: "renewalMailingAddress",           
     label: "24. Renewal Notice Mailing Address",            
     type: "text",
+    visibleCondition: (formState) => !formState.sameMailingAddress,
     required: true,
     validation: validators.required
   },
@@ -400,6 +430,7 @@ export const fields: FieldDef[] = [
     id: "renewalCity",           
     label: "24.Renewal Notice City",            
     type: "text",
+    visibleCondition: (formState) => !formState.sameMailingAddress,
     required: true,
     validation: validators.required
   },
@@ -407,6 +438,7 @@ export const fields: FieldDef[] = [
     id: "renewalState",           
     label: "24.Renewal Notice Mailing State",            
     type: "dropdown",
+    visibleCondition: (formState) => !formState.sameMailingAddress,
     required: true,
     validation: validators.required
   },
@@ -414,6 +446,7 @@ export const fields: FieldDef[] = [
     id: "renewalZip",           
     label: "24.Renewal Notice Mailing Zip",            
     type: "text",
+    visibleCondition: (formState) => !formState.sameMailingAddress,
     required: true,
     validation: validators.zip
   },
@@ -799,6 +832,7 @@ export default function Responsive130UForm({
         state[f.id] = f.type === "checkbox" ? false : "";
       }
     });
+    state.sameMailingAddress = true;
     return state;
   });
 
@@ -953,23 +987,49 @@ export default function Responsive130UForm({
       );
     }
 
-    return (
-      <div key={f.id} className="form-field">
-        <label htmlFor={f.id} className="form-label">
-          {f.label}
-          {showAsterisk && <span className="text-red-500">*</span>}
-        </label>
-        <input
-          id={f.id}
-          type="text"
-          value={String(formState[f.id] || "")}
-          onChange={e => handleChange(f.id, e.target.value)}
-          className={`form-input ${showError ? 'input-error' : ''}`}
-        />
-        {showError && <div className="error-message">{err}</div>}
-      </div>
-    );
-  };
+  //   return (
+  //     <div key={f.id} className="form-field">
+  //       <label htmlFor={f.id} className="form-label">
+  //         {f.label}
+  //         {showAsterisk && <span className="text-red-500">*</span>}
+  //       </label>
+  //       <input
+  //         id={f.id}
+  //         type="text"
+  //         value={String(formState[f.id] || "")}
+  //         onChange={e => handleChange(f.id, e.target.value)}
+  //         className={`form-input ${showError ? 'input-error' : ''}`}
+  //       />
+  //       {showError && <div className="error-message">{err}</div>}
+  //     </div>
+  //   );
+  // };
+  // change date
+  const isDateField = ["sellerDate", "applicantDate", "additionalApplicantDate"].includes(f.id);
+
+  return (
+    <div key={f.id} className="form-field">
+      <label htmlFor={f.id} className="form-label">
+        {f.label}
+        {showAsterisk && <span className="text-red-500">*</span>}
+      </label>
+      <input
+        id={f.id}
+        type={isDateField ? "date" : "text"}
+        value={
+          isDateField
+            ? (formState[f.id] || getToday())  // 日期字段：默认今天
+            : String(formState[f.id] || "")    // 其他字段照旧
+        }
+        max={isDateField ? getToday() : undefined} // 日期字段不能超过今天
+        onChange={e => handleChange(f.id, e.target.value)}
+        className={`form-input ${showError ? "input-error" : ""}`}
+      />
+      {showError && <div className="error-message">{err}</div>}
+    </div>
+  );
+};
+
 
   return (
     <>
