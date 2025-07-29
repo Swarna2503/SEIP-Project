@@ -66,6 +66,7 @@
 
 .progress-widget {
   background: rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   padding: 0.875rem 1.5rem;
   border-radius: 10px;
@@ -140,6 +141,30 @@
 .logout-button:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+
+.profile-button {
+  background: #2563eb; /* 蓝色按钮，与红色Logout区分 */
+  color: #ffffff;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+.profile-button:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.profile-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
 }
 
 /* ─── Section Base ─── */

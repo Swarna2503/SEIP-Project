@@ -372,6 +372,10 @@ export default function TitleUploadPage() {
         )}
 
         <div className="buttons">
+          <button className="btn back" onClick={() => navigate(-1)}>
+            ← Back
+          </button>
+
           <button
             className="btn primary"
             onClick={handleNext}

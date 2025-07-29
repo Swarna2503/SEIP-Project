@@ -331,6 +331,10 @@ export default function OCRPage() {
         </div>
 
         <div className="buttons">
+          <button className="btn back" onClick={() => navigate(-1)}>
+            ← Back
+          </button>
+
           <button
             className="btn primary"
             disabled={!canContinue || loading}
