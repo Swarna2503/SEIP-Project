@@ -14,6 +14,8 @@ import ForgotPasswordPage from "./pages/forgotPasswordPage";
 import ResetPasswordPage from "./pages/resetPasswordPage";
 import ProfilePage from "./pages/ProfilePage";
 
+import EmailSentPage from "./pages/emailsentPage";
+import SellerSignPage from "./pages/sellerSignature";
 export default function App() {
   // const isLoggedIn = Boolean(sessionStorage.getItem("userEmail"));
 
@@ -33,6 +35,8 @@ export default function App() {
       <Route path="/responsive-form" element={<PrivateRoute><ResponsiveFormPage /></PrivateRoute>} />
       <Route path="/signature" element={<PrivateRoute><SignaturePage /></PrivateRoute>} />
       <Route path="/preview" element={<PrivateRoute><PreviewPage /></PrivateRoute>} />
+      <Route path="/email-sent" element={<PrivateRoute><EmailSentPage/></PrivateRoute>} />
+      <Route path="/seller-sign/:token" element={<SellerSignPage />} />
       <Route path="/submit" element={<PrivateRoute><SubmitPage /></PrivateRoute>} />
     </Routes>
   );

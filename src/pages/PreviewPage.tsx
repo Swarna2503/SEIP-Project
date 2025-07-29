@@ -36,12 +36,17 @@ export default function PreviewPage() {
     document.body.removeChild(a);
   };
 
-  const handleSubmit = () => {
+  const handleSendToSeller = () => {
     if (!state?.pdfData) {
-      setError('Cannot submit - no PDF data available');
+      setError('Cannot send email - no PDF data available');
       return;
     }
-    navigate('/submit', { state: { pdfData: state.pdfData } });
+    navigate('/email-sent', { 
+      state: { 
+        pdfData: state.pdfData,
+        // Add any other necessary data like form data or document reference
+      } 
+    });
   };
 
   return (
@@ -127,10 +132,10 @@ export default function PreviewPage() {
         </button>
 
         <button 
-          onClick={handleSubmit}
+          onClick={handleSendToSeller}
           style={{ 
             padding: '12px 18px', 
-            background: 'var(--primary-dark)', 
+            background: 'var(--success)', 
             color: 'var(--lighter)',
             border: 'none',
             borderRadius: 'var(--radius)',
@@ -143,10 +148,10 @@ export default function PreviewPage() {
             boxShadow: 'var(--shadow)'
           }}
           disabled={!pdfUrl}
-          onMouseOver={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--secondary)')}
-          onMouseOut={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--primary-dark)')}
+          onMouseOver={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--success-dark)')}
+          onMouseOut={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--success)')}
         >
-          Submit Document
+          Send to Seller
         </button>
       </div>
 

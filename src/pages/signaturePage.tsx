@@ -1,4 +1,3 @@
-// src/pages/ReviewSubmitPage.tsx
 import React, { useRef, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
@@ -11,7 +10,6 @@ export default function ReviewSubmitPage() {
   const navigate = useNavigate();
   const { titleForm = {}, signatures = {} as Record<string,string> } = (state as any) || {};
 
-  const sellerRef     = useRef<SigPad>(null);
   const ownerRef      = useRef<SigPad>(null);
   const additionalRef = useRef<SigPad>(null);
 
@@ -23,7 +21,6 @@ export default function ReviewSubmitPage() {
         r.current.fromDataURL(url);
       }
     };
-    load(sellerRef,     signatures.SellerSignature);
     load(ownerRef,      signatures.OwnerSignature);
     load(additionalRef, signatures.AdditionalSignature);
   }, [signatures]);
@@ -36,13 +33,12 @@ export default function ReviewSubmitPage() {
   const [isLoading, setLoading] = useState(false);
   const [error, setError]       = useState<string|null>(null);
 
-  const handleDownload = async () => {
+  const handlePreviewDownload = async () => {
     setLoading(true);
     setError(null);
     try {
       const sigs: PdfSignature[] = [
-        { key: 'SellerSignature',     dataUrl: signatures.SellerSignature     || getSig(sellerRef)     },
-        { key: 'OwnerSignature',      dataUrl: signatures.OwnerSignature      || getSig(ownerRef)      },
+        { key: 'OwnerSignature',      dataUrl: signatures.OwnerSignature      || getSig(ownerRef) },
         { key: 'AdditionalSignature', dataUrl: signatures.AdditionalSignature || getSig(additionalRef) },
       ];
       
@@ -56,8 +52,12 @@ export default function ReviewSubmitPage() {
       navigate('/preview', {
         state: {
           pdfData: out,
-          formData: titleForm,  // Contains state abbreviations
-          signatures,
+          formData: titleForm,
+          signatures: {
+            ...signatures,
+            OwnerSignature: sigs[0].dataUrl,
+            AdditionalSignature: sigs[1].dataUrl
+          }
         }
       });
     } catch (e: any) {
@@ -82,7 +82,7 @@ export default function ReviewSubmitPage() {
         borderBottom: '2px solid var(--primary-dark)',
         paddingBottom: 16
       }}>
-        Review &amp; Sign
+        Applicant Signatures
       </h1>
       
       {error && <div style={{
@@ -95,49 +95,6 @@ export default function ReviewSubmitPage() {
       }}>
         <strong>Error:</strong> {error}
       </div>}
-
-      {/** Seller **/}
-      <section style={{ 
-        marginBottom: 32,
-        backgroundColor: 'var(--lighter)',
-        padding: 20,
-        borderRadius: 'var(--radius)',
-        boxShadow: 'var(--shadow)'
-      }}>
-        <h2 style={{ 
-          color: 'var(--primary)',
-          marginTop: 0,
-          marginBottom: 16
-        }}>Seller’s Signature</h2>
-        
-        <SignatureCanvas ref={sellerRef} penColor="black"
-          canvasProps={{ width:600, height:150, className:'sigCanvas',
-            style:{
-              border:'1px solid var(--border)',
-              borderRadius: 'var(--radius)',
-              backgroundColor: 'var(--lighter)',
-            }}}/>
-        
-        <button 
-          onClick={() => sellerRef.current?.clear()}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: 'var(--light)',
-            color: 'var(--secondary)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)',
-            cursor: 'pointer',
-            marginTop: 12,
-            transition: 'var(--transition)',
-            fontWeight: 600,
-            fontSize: 14,
-          }}
-          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e2e8f0'}
-          onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--light)'}
-        >
-          Clear Seller Signature
-        </button>
-      </section>
 
       {/** Owner **/}
       <section style={{ 
@@ -226,7 +183,7 @@ export default function ReviewSubmitPage() {
       </section>
 
       <button
-        onClick={handleDownload}
+        onClick={handlePreviewDownload}
         disabled={isLoading}
         style={{
           marginTop: 20,
@@ -248,7 +205,7 @@ export default function ReviewSubmitPage() {
         onMouseOver={(e) => !isLoading && (e.currentTarget.style.backgroundColor = 'var(--secondary)')}
         onMouseOut={(e) => !isLoading && (e.currentTarget.style.backgroundColor = 'var(--primary)')}
       >
-        {isLoading ? 'Generating PDF…' : 'Preview & Download'}
+        {isLoading ? 'Generating PDF...' : 'Preview & Download'}
       </button>
     </div>
   );
