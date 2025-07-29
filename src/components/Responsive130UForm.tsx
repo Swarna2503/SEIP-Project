@@ -907,6 +907,14 @@ export default function Responsive130UForm({
     const err = errors[f.id];
     const showError = (touched[f.id] || showAllErrors) && err;
     const showAsterisk = f.required && f.id !== "individual" && f.id !== "usDriverLicense";
+    // // 在 renderField 最开始，紧跟在 `if (!isVisible(f)) return null;` 之后：
+    // const dateFieldIds = ["sellerDate", "applicantDate", "additionalApplicantDate"];
+    // const isDateField = dateFieldIds.includes(f.id);
+
+    // if (isDateField) {
+    //   const err = errors[f.id];
+    //   const showError = (touched[f.id] || showAllErrors) && err;
+    //   const showAsterisk = f.required;
     
     if (f.type === "checkbox") {
       return (
@@ -987,6 +995,27 @@ export default function Responsive130UForm({
       );
     }
 
+    return (
+      <div key={f.id} className="form-field">
+        <label htmlFor={f.id} className="form-label">
+          {f.label}
+          {showAsterisk && <span className="text-red-500">*</span>}
+        </label>
+        <input
+          id={f.id}
+          type="text"
+          value={String(formState[f.id] || "")}
+          onChange={e => handleChange(f.id, e.target.value)}
+          className={`form-input ${showError ? 'input-error' : ''}`}
+        />
+        {showError && <div className="error-message">{err}</div>}
+      </div>
+    );
+  };
+//   // change date
+//   const isDateField = ["sellerDate", "applicantDate", "additionalApplicantDate"].includes(f.id);
+
+    
   //   return (
   //     <div key={f.id} className="form-field">
   //       <label htmlFor={f.id} className="form-label">
@@ -995,8 +1024,9 @@ export default function Responsive130UForm({
   //       </label>
   //       <input
   //         id={f.id}
-  //         type="text"
-  //         value={String(formState[f.id] || "")}
+  //         type="date"
+  //         value={formState[f.id] || getToday()}
+  //         max={getToday()}
   //         onChange={e => handleChange(f.id, e.target.value)}
   //         className={`form-input ${showError ? 'input-error' : ''}`}
   //       />
@@ -1004,31 +1034,30 @@ export default function Responsive130UForm({
   //     </div>
   //   );
   // };
-  // change date
-  const isDateField = ["sellerDate", "applicantDate", "additionalApplicantDate"].includes(f.id);
 
-  return (
-    <div key={f.id} className="form-field">
-      <label htmlFor={f.id} className="form-label">
-        {f.label}
-        {showAsterisk && <span className="text-red-500">*</span>}
-      </label>
-      <input
-        id={f.id}
-        type={isDateField ? "date" : "text"}
-        value={
-          isDateField
-            ? (formState[f.id] || getToday())  // 日期字段：默认今天
-            : String(formState[f.id] || "")    // 其他字段照旧
-        }
-        max={isDateField ? getToday() : undefined} // 日期字段不能超过今天
-        onChange={e => handleChange(f.id, e.target.value)}
-        className={`form-input ${showError ? "input-error" : ""}`}
-      />
-      {showError && <div className="error-message">{err}</div>}
-    </div>
-  );
-};
+
+//   return (
+//     <div key={f.id} className="form-field">
+//       <label htmlFor={f.id} className="form-label">
+//         {f.label}
+//         {showAsterisk && <span className="text-red-500">*</span>}
+//       </label>
+//       <input
+//         id={f.id}
+//         type={isDateField ? "date" : "text"}
+//         value={
+//           isDateField
+//             ? (formState[f.id] || getToday())  // 日期字段：默认今天
+//             : String(formState[f.id] || "")    // 其他字段照旧
+//         }
+//         max={isDateField ? getToday() : undefined} // 日期字段不能超过今天
+//         onChange={e => handleChange(f.id, e.target.value)}
+//         className={`form-input ${showError ? "input-error" : ""}`}
+//       />
+//       {showError && <div className="error-message">{err}</div>}
+//     </div>
+//   );
+// };
 
 
   return (
