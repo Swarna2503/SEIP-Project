@@ -117,6 +117,14 @@ export default function HomePage() {
                   >
                     Logout
                   </button>
+                  <button
+                    onClick={() => navigate("/profile")}
+                    className="profile-button"
+                    title="View Profile"
+                  >
+                    Profile
+                  </button>
+
                 </div>
               )}
             </div>
@@ -146,15 +154,6 @@ export default function HomePage() {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                 <span className="status-badge pending">Pending</span>
-                {/* <button
-                  onClick={() => navigate("/ocr")}
-                  className="start-button"
-                >
-                  Start Form →
-                </button> */}
-                {/* <button onClick={handleStart} className="start-button">
-                  Start Form →
-                </button> */}
                 {existingAppId ? (
                   <div className="button-group">
                     <button onClick={continueDraft} className="btn primary">

@@ -12,6 +12,7 @@ import PrivateRoute from "./components/privateroute";
 import SubmitPage from "./pages/submitpage";
 import ForgotPasswordPage from "./pages/forgotPasswordPage";
 import ResetPasswordPage from "./pages/resetPasswordPage";
+import ProfilePage from "./pages/ProfilePage";
 
 export default function App() {
   // const isLoggedIn = Boolean(sessionStorage.getItem("userEmail"));
@@ -26,6 +27,7 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage/>} />
       <Route path="/reset-password" element={<ResetPasswordPage/>} />
       <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
+      <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
       <Route path="/ocr" element={<PrivateRoute><OCRPage /></PrivateRoute>} />
       <Route path="/upload-title" element={<PrivateRoute><TitleUploadPage /></PrivateRoute>} />
       <Route path="/responsive-form" element={<PrivateRoute><ResponsiveFormPage /></PrivateRoute>} />

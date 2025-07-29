@@ -48,3 +48,19 @@ export async function getApplicationByUser(user_id: string) {
   });
   return res;  // { ok, status, data: { application_id?, application_display_id?, status? } }
 }
+
+// 查询历史提交记录
+export async function getApplicationHistory(user_id: string) {
+  const res = await fetchWrapper(`/application/history/${encodeURIComponent(user_id)}`, {
+    method: "GET",
+  });
+  return res;
+}
+
+// ✅ 新增：获取历史申请记录
+export async function getDraftApplications(user_id: string) {
+  const res = await fetchWrapper(`/application/drafts/${encodeURIComponent(user_id)}`, {
+    method: "GET",
+  });
+  return res;
+}

@@ -32,18 +32,9 @@ export default function ResponsiveFormPage() {
   const location = useLocation();
   const state = location.state as LocationState | undefined;
   const { ocr: dlOcr, titleOcr, titleFile } = state ?? {};
-  const [selectedIdType, setSelectedIdType] = useState("");
-  useEffect(() => {
-    const storedIdType = sessionStorage.getItem("selectedIdType");
-    if (storedIdType) {
-      setSelectedIdType(storedIdType);
-    }
-  }, []);
-  useEffect(() => {
-    console.log("dlOcr data:", dlOcr);
-    console.log("titleOcr data:", titleOcr);
-    console.log("mapped formState:", formState);
-  }, []);
+  const [selectedIdType] = useState(() => {
+    return sessionStorage.getItem("selectedIdType") || "";
+  });
 
   
   const [formValid, setFormValid] = useState(false);
@@ -122,9 +113,17 @@ export default function ResponsiveFormPage() {
   }, [state, navigate]);
 
   // initialize form state with OCR data
+  // const [formState, setFormState] = useState(() =>
+  //   mapOcrToFormValues(dlOcr ?? {}, titleOcr ?? {}, selectedIdType)
+  // );
+  // init formState once with default values
   const [formState, setFormState] = useState(() =>
     mapOcrToFormValues(dlOcr ?? {}, titleOcr ?? {}, selectedIdType)
   );
+
+  console.log("selectedIdType from session:", selectedIdType);
+  console.log("generated formState:", formState);
+
 
   const handleFormChange = (newState: Record<string, any>, isValid: boolean, errors: Record<string, string>) => {
     setFormState(newState);
