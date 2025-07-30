@@ -144,7 +144,7 @@
 }
 
 .profile-button {
-  background: #2563eb; /* 蓝色按钮，与红色Logout区分 */
+  background: #2563eb; 
   color: #ffffff;
   border: none;
   padding: 0.5rem 1.25rem;

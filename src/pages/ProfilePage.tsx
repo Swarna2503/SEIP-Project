@@ -17,6 +17,28 @@ export default function ProfilePage() {
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // useEffect(() => {
+  //   if (!user?.user_id) return;
+
+  //   async function fetchData() {
+  //     if (!user || !user.user_id) return;
+
+  //     const draftRes = await getDraftApplications(user.user_id);
+  //     if (draftRes.ok && Array.isArray(draftRes.data)) {
+  //       setDrafts(draftRes.data);
+  //     }
+
+  //     const historyRes = await getApplicationHistory(user.user_id);
+  //     if (historyRes.ok && Array.isArray(historyRes.data)) {
+  //       setHistory(historyRes.data);
+  //     }
+
+  //     setLoading(false);
+  //   }
+
+  //   fetchData();
+  // }, [user]);
+
   useEffect(() => {
     if (!user?.user_id) return;
 
@@ -24,6 +46,20 @@ export default function ProfilePage() {
       if (!user || !user.user_id) return;
 
       const draftRes = await getDraftApplications(user.user_id);
+      console.log("DEBUG drafts raw:", draftRes.data);   // ← 在这里打印
+      // 先检查 ok 且 data 是数组
+      if (draftRes.ok && Array.isArray(draftRes.data)) {
+        // 这里用 item 而不是 d，避免报 undefined
+        console.table(
+          draftRes.data.map(item => ({
+            displayId: item.application_display_id,
+            driverLicense: item.driver_license_id,
+            titleDoc: item.title_doc_id,
+          }))
+        );
+
+        setDrafts(draftRes.data);
+      }
       if (draftRes.ok && Array.isArray(draftRes.data)) {
         setDrafts(draftRes.data);
       }
@@ -38,6 +74,8 @@ export default function ProfilePage() {
 
     fetchData();
   }, [user]);
+
+
 
   const handleDelete = async (applicationId: string) => {
   const confirmDelete = window.confirm("Are you sure you want to delete this draft?");

@@ -154,14 +154,19 @@ export default function OCRPage() {
 
   const onDragOver = (e: DragEvent<HTMLDivElement>) => e.preventDefault();
 
+  // const canContinue =
+  //   ocrData.name &&
+  //   ocrData.address &&
+  //   ocrData.dlNumber &&
+  //   ocrData.state &&
+  //   ocrData.city &&
+  //   ocrData.zip_code &&
+  //   ocrData.street_address;
   const canContinue =
-    ocrData.name &&
-    ocrData.address &&
-    ocrData.dlNumber &&
-    ocrData.state &&
-    ocrData.city &&
-    ocrData.zip_code &&
-    ocrData.street_address;
+  !!ocrData.name &&
+  !!ocrData.address &&
+  !!ocrData.dlNumber;
+
 
   const handleRemoveFile = () => {
     if (filePreview?.url) {
@@ -270,17 +275,17 @@ export default function OCRPage() {
                 setLoading(true);
                 // const data = await getLatestOCR(userId);
                 const data = await getLatestOCR(applicationId);
-                if (data && data.dlNumber) {
+                if (data && (data.dlNumber || data.dl_number)) {
                   setOcrData({
-                    first_name: data.first_name,
-                    last_name: data.last_name,
+                    first_name: data.first_name || "",
+                    last_name: data.last_name || "",
                     name: `${data.first_name ?? ""} ${data.last_name ?? ""}`.trim(),
-                    address: data.address,
-                    dlNumber: data.dlNumber,
-                    state: data.state,
-                    street_address: data.street_address,
-                    zip_code: data.zip_code,
-                    city: data.city,
+                    address: data.address ?? "",
+                    dlNumber: data.dlNumber ?? data.dl_number ?? "",
+                    state: data.state ?? "",
+                    city: data.city ?? data.City ?? "",
+                    street_address: data.street_address ?? data.streetAddress ?? "",
+                    zip_code: data.zip_code ?? data.zipCode ?? "",
                   });
                 } else {
                   setError("No previous OCR data found.");
