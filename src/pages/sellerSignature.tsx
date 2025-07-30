@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
 
-// Mock SignatureCanvas component since it's not available in this environment
 const SignatureCanvas = React.forwardRef<any, any>((props, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -102,21 +101,8 @@ const SignatureCanvas = React.forwardRef<any, any>((props, ref) => {
   );
 });
 
-// // Mock fillAndFlattenPdf function
-// const fillAndFlattenPdf = async (
-//   templateBytes: Uint8Array,
-//   formData: Record<string, any>,
-//   signatures: any[]
-// ): Promise<Uint8Array> => {
-//   // Mock implementation - in real app this would process the PDF
-//   console.log('Processing PDF with signatures:', signatures);
-//   return templateBytes; // Return original for demo
-// };
-
 export default function SellerSignPage() {
-  // Mock router data for demonstration
   const token = 'demo-token-123';
-  // const navigate = (path: string) => console.log('Navigate to:', path);
   const location = { 
     state: null as { pdfData?: string; applicantInfo?: any } | null 
   };
@@ -128,17 +114,24 @@ export default function SellerSignPage() {
   const [signatureName, setSignatureName] = useState('');
   const [signatureDate, setSignatureDate] = useState('');
   const [pdfData, setPdfData] = useState('');
-  const [setApplicantInfo] = useState<any>({});
+  const [applicantInfo, setApplicantInfo] = useState<any>({});
+
+  // Generate formatted date string
+  const getFormattedDate = () => {
+    const today = new Date();
+    return today.toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric'
+    });
+  };
 
   useEffect(() => {
     const loadDocument = () => {
       try {
-        // Check if we have a token
-        if (!token) {
-          throw new Error('Missing document token');
-        }
+        // Set the date immediately
+        setSignatureDate(getFormattedDate());
         
-        // Try to get document from state first (for testing in artifacts)
         if (location.state?.pdfData) {
           setPdfData(location.state.pdfData);
           setApplicantInfo(location.state.applicantInfo || {});
@@ -146,9 +139,8 @@ export default function SellerSignPage() {
           return;
         }
         
-        // In real app, this would check localStorage
-        // For demo purposes, we'll simulate document data
-        const mockPdfData = 'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtsO4w6HDhMOgw6...'; // Mock PDF data
+        // Mock document data
+        const mockPdfData = 'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtsO4w6HDhMOgw6...';
         const mockApplicantInfo = {
           applicantName: 'John Doe',
           applicantEmail: 'john@example.com'
@@ -156,14 +148,6 @@ export default function SellerSignPage() {
         
         setPdfData(mockPdfData);
         setApplicantInfo(mockApplicantInfo);
-        
-        // Set current date
-        const today = new Date();
-        setSignatureDate(today.toLocaleDateString('en-US', {
-          month: '2-digit',
-          day: '2-digit',
-          year: 'numeric'
-        }));
         
         setIsLoading(false);
       } catch (e: any) {
@@ -173,13 +157,15 @@ export default function SellerSignPage() {
       }
     };
 
-    // Add a small delay to simulate loading
+    // Set the date immediately on load
+    setSignatureDate(getFormattedDate());
+    
+    // Simulate document loading
     setTimeout(loadDocument, 1000);
-  }, [token]);
+  }, []);
 
   const handleSignDocument = async () => {
     try {
-      // Validation
       if (!signatureName.trim()) {
         setError('Please provide your name');
         return;
@@ -195,15 +181,10 @@ export default function SellerSignPage() {
         return;
       }
 
-      if (!pdfData) {
-        setError('PDF data is missing');
-        return;
-      }
-
       setIsSubmitting(true);
       setError(null);
 
-      // Get signature as data URL
+      // Get signature
       const canvas = sellerRef.current.getTrimmedCanvas();
       if (!canvas) {
         throw new Error('Could not get signature canvas');
@@ -213,30 +194,21 @@ export default function SellerSignPage() {
       
       // Prepare signature object
       const signatures = [
-        {
-          key: 'SellerSignature',
-          dataUrl: signatureDataUrl
-        }
+        { key: 'SellerSignature', dataUrl: signatureDataUrl }
       ];
 
-      // In a real app, this would process the PDF
+      // Simulate signing process
       console.log('Signing document with:', {
         name: signatureName,
         date: signatureDate,
         signatures: signatures.length
       });
 
-      // Simulate processing delay
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Mock success - in real app this would save the signed document
+      // Mock success
       const docId = `signed_${Date.now()}`;
-      
-      // Navigate to confirmation (would need to create this route)
-      console.log('Document signed successfully with ID:', docId);
-      
-      // For demo, just show success message
-      alert('Document signed successfully!');
+      alert(`Document signed successfully! ID: ${docId}`);
       
     } catch (e: any) {
       console.error('Error signing document:', e);
@@ -252,7 +224,6 @@ export default function SellerSignPage() {
     }
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <div style={{
@@ -288,7 +259,6 @@ export default function SellerSignPage() {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div style={{
@@ -370,7 +340,6 @@ export default function SellerSignPage() {
     );
   }
 
-  // Main content
   return (
     <div style={{
       padding: 24,
@@ -525,8 +494,6 @@ export default function SellerSignPage() {
               type="text"
               value={signatureDate}
               readOnly
-              title="Signature Date"
-              placeholder="MM/DD/YYYY"
               style={{
                 width: '100%',
                 padding: '14px 16px',

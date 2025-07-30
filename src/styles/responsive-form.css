@@ -265,6 +265,23 @@ body {
   margin-top: 1rem;
 }
 
+.btn-back {
+  margin-right: 1.5em;
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.9rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3), 0 2px 4px -1px rgba(37, 99, 235, 0.1);
+}
+
 .btn-next {
   background: var(--primary);
   color: white;
