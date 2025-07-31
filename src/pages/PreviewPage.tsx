@@ -1,20 +1,37 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { uploadPdf } from '../apis/document';
+
+interface LocationState {
+  applicationId: string;
+  pdfData: Uint8Array;
+  formData: Record<string, any>;
+  signatures: Record<string, string>;
+}
 
 export default function PreviewPage() {
   const { state } = useLocation();
+  const navigate = useNavigate();
+  const {
+    applicationId,
+    pdfData,
+    formData,
+    signatures,
+  } = (state as LocationState) || {};
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+
+  {loading && <p>Loading PDF...</p>}
 
   useEffect(() => {
-    if (!state?.pdfData) {
+    if (!pdfData) {
       setError('No PDF data found. Please go back and generate the document.');
       return;
     }
     
     try {
-      const blob = new Blob([state.pdfData], { type: 'application/pdf' });
+      const blob = new Blob([pdfData], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
       
@@ -23,30 +40,61 @@ export default function PreviewPage() {
     } catch (e) {
       setError('Failed to load PDF document');
     }
-  }, [state]);
+  }, [pdfData]);
 
   const handleDownload = () => {
     if (!pdfUrl) return;
     
     const a = document.createElement('a');
     a.href = pdfUrl;
-    a.download = '130-U-signed.pdf';
+    // a.download = '130-U-signed.pdf';
+    a.download    = `130-U-${applicationId}.pdf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   };
 
-  const handleSendToSeller = () => {
-    if (!state?.pdfData) {
-      setError('Cannot send email - no PDF data available');
-      return;
+  const handleSendToSeller = async () => {
+    if (!pdfData || !applicationId) return;
+    setError(null);
+    setLoading(true);
+    try {
+      // 转 Base64 Data URL
+      const binary = Array.from(pdfData)
+        .map(b => String.fromCharCode(b))
+        .join('');
+      const base64 = btoa(binary);
+      const pdfBase64 = 'data:application/pdf;base64,' + base64;
+
+      const res = await uploadPdf(applicationId, pdfBase64);
+      if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+
+      // 上传成功，进入填邮箱页，只带 applicationId
+      navigate('/email-sent', { state: { applicationId, pdfData, formData, signatures, } });
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
-    navigate('/email-sent', { 
-      state: { 
-        pdfData: state.pdfData,
-        // Add any other necessary data like form data or document reference
-      } 
-    });
+    // if(!applicationId) {
+    //   setError('Missing application ID');
+    //   return;
+    // }
+    // if (!pdfData) {
+    //   setError('Cannot send - no PDF data');
+    //   return;
+    // }
+
+    // navigate('/email-sent',
+    //   {
+    //     state: {
+    //       naviapplicationId,
+    //       pdfData,
+    //       formData,
+    //       signatures,
+    //     }
+    //   }
+    // )
   };
 
   return (

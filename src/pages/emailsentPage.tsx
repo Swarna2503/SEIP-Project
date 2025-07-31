@@ -1,99 +1,53 @@
 // src/pages/EmailSentPage.tsx
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { mockSendEmail, mockPrepareSellerSignature } from '../apis/mockapi';
+import { requestSignature } from '../apis/document';
 
 export default function EmailSentPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
+
   const [sellerEmail, setSellerEmail] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [isSent, setIsSent] = useState(false);
-  const [signatureStatus, setSignatureStatus] = useState<{
-    initiated: boolean;
-    link?: string;
-    token?: string;
-    error?: string;
-  }>({ initiated: false });
+  const applicationId = state?.applicationId;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (!applicationId) {
+      setSendError('Missing application ID. Please go back and try again.');
+      return;
+    }
+
     if (!sellerEmail.trim()) {
-      setSendError('Please enter a valid email address');
+      setSendError('Please enter a valid seller email address.');
       return;
     }
-    
-    if (!state?.pdfData) {
-      setSendError('PDF data is missing. Please go back and try again.');
-      return;
-    }
-    
+
     try {
       setIsSending(true);
       setSendError(null);
-      setSignatureStatus({ initiated: false });
-      
-      // Step 1: Mock sending email to seller
-      const emailResponse = await mockSendEmail({
-        to: sellerEmail.trim(),
-        subject: 'Form 130-U for Review and Signature',
-        body: 'Please review and sign the attached Form 130-U document.',
-        pdfData: state.pdfData,
-        applicantInfo: state.formData
-      });
 
-      if (!emailResponse.success) {
-        throw new Error('Failed to send email');
-      }
+      await requestSignature(applicationId, sellerEmail.trim());
 
-      // Step 2: Mock initiating seller signature process
-      const signatureResponse = await mockPrepareSellerSignature({
-        sellerEmail: sellerEmail.trim(),
-        pdfData: state.pdfData,
-        metadata: {
-          initiatedBy: state.formData?.applicantEmail || 'unknown',
-          expirationHours: 72
-        }
-      });
-
-      if (!signatureResponse.success) {
-        throw new Error(signatureResponse.error || 'Failed to initiate signature process');
-      }
-
-      // Store ONLY metadata in localStorage (removed pdfData to fix quota error)
-      const storageKey = `document_${signatureResponse.signatureId}`;
-      localStorage.setItem(storageKey, JSON.stringify({
-        applicantInfo: state.formData,
-        expiration: Date.now() + 72 * 60 * 60 * 1000 // 72 hours
-      }));
-
-      // Update UI state
       setIsSent(true);
-      setSignatureStatus({
-        initiated: true,
-        link: signatureResponse.signingLink,
-        token: signatureResponse.signatureId
-      });
-    } catch (error: any) {
-      console.error('Process failed:', error);
-      setSendError(error.message || 'An unexpected error occurred');
+    } catch (err: any) {
+      setSendError(err.message || 'Failed to send signature email.');
     } finally {
       setIsSending(false);
     }
   };
 
-  // Format expiration date for display
-  // const formatExpiration = (date?: Date) => {
-  //   if (!date) return '';
-  //   return new Date(date).toLocaleString('en-US', {
-  //     month: 'short',
-  //     day: 'numeric',
-  //     hour: '2-digit',
-  //     minute: '2-digit'
-  //   });
-  // };
+  if (!applicationId) {
+    return (
+      <div style={{ padding: 40, textAlign: 'center', color: 'red' }}>
+        <h2>Missing application ID</h2>
+        <p>Please go back and generate your PDF again.</p>
+      </div>
+    );
+  }
 
   if (isSent) {
     return (
@@ -144,61 +98,34 @@ export default function EmailSentPage() {
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
             
-            <p style={{ 
-              fontSize: '1.1rem', 
-              lineHeight: 1.6,
-              marginBottom: 10,
-              color: '#4b5563'
-            }}>
+            <p style={{ fontSize: '1.1rem', lineHeight: 1.6, marginBottom: 10, color: '#4b5563' }}>
               Your document has been successfully sent to the seller for review and signature.
             </p>
-            
-            {signatureStatus.initiated ? (
-              <>
-                <p style={{ 
-                  fontSize: '1rem', 
-                  lineHeight: 1.6,
-                  color: '#374151',
-                  marginBottom: 20
-                }}>
-                  The seller has been sent a secure link to sign the document electronically.
-                </p>
-                
-                <div style={{ 
-                  backgroundColor: '#dbeafe',
-                  padding: 15,
-                  borderRadius: 6,
-                  borderLeft: '4px solid #3b82f6',
-                  textAlign: 'left',
-                  margin: '20px 0'
-                }}>
-                  <p style={{ margin: 0, color: '#1e40af' }}>
-                    <strong>Signature Status:</strong> Signature process initiated
-                  </p>
-                  <p style={{ margin: '8px 0 0', color: '#1e40af' }}>
-                    <strong>Token:</strong> {signatureStatus.token}
-                  </p>
-                </div>
-              </>
-            ) : (
-              <p style={{ 
-                fontSize: '1rem', 
-                lineHeight: 1.6,
-                color: '#b45309',
-                marginBottom: 20
-              }}>
-                Warning: Signature process could not be initiated. The seller has received the document but will need to sign manually.
+            <p style={{ fontSize: '1rem', color: '#374151' }}>
+              The seller can sign it using the link below (valid for 72 hours).
+            </p>
+            <div style={{ 
+              backgroundColor: '#dbeafe',
+              padding: 15,
+              borderRadius: 6,
+              borderLeft: '4px solid #3b82f6',
+              textAlign: 'left',
+              margin: '20px 0'
+            }}>
+              <p style={{ margin: 0, color: '#1e40af' }}>
+                <strong>Seller Link:</strong>{' '}
+                <a 
+                  href={`${import.meta.env.VITE_FRONTEND_URL}/seller-sign/${applicationId}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  {import.meta.env.VITE_FRONTEND_URL}/seller-sign/{applicationId}
+                </a>
               </p>
-            )}
+            </div>
           </div>
-          
-          <div style={{ 
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 15,
-            justifyContent: 'center',
-            marginTop: 20
-          }}>
+
+          <div style={{ display: 'flex', gap: 15, justifyContent: 'center' }}>
             <button 
               onClick={() => navigate('/')}
               style={{ 
@@ -217,27 +144,6 @@ export default function EmailSentPage() {
             >
               Return to Home
             </button>
-            
-            {signatureStatus.link && (
-              <button 
-                onClick={() => window.open(signatureStatus.link, '_blank')}
-                style={{ 
-                  padding: '12px 24px', 
-                  background: '#4b5563', 
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  minWidth: 180,
-                  transition: 'background-color 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#374151'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#4b5563'}
-              >
-                Test Seller Sign Page
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -267,14 +173,9 @@ export default function EmailSentPage() {
         width: '100%',
         maxWidth: 600
       }}>
-        <h1 style={{ 
-          color: '#1e40af',
-          marginBottom: 24,
-          fontSize: '2rem'
-        }}>
+        <h1 style={{ color: '#1e40af', marginBottom: 24, fontSize: '2rem' }}>
           Send Document to Seller
         </h1>
-        
         <div style={{ marginBottom: 30 }}>
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
@@ -291,25 +192,12 @@ export default function EmailSentPage() {
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
             <polyline points="22,6 12,13 2,6"></polyline>
           </svg>
-          
-          <p style={{ 
-            fontSize: '1.1rem', 
-            lineHeight: 1.6,
-            marginBottom: 10,
-            color: '#4b5563'
-          }}>
+          <p style={{ fontSize: '1.1rem', lineHeight: 1.6, marginBottom: 10, color: '#4b5563' }}>
             Please enter the seller's email address below to send them the completed Form 130-U document.
           </p>
-          
-          <p style={{ 
-            fontSize: '1rem', 
-            lineHeight: 1.6,
-            color: '#6b7280',
-            marginBottom: 25
-          }}>
-            The seller will receive an email with the document attached and instructions for signing.
+          <p style={{ fontSize: '1rem', color: '#6b7280', marginBottom: 25 }}>
+            The seller will receive a secure signature link valid for 72 hours.
           </p>
-          
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 20 }}>
               <label htmlFor="seller-email" style={{ 
@@ -349,7 +237,6 @@ export default function EmailSentPage() {
                 </p>
               )}
             </div>
-            
             <button 
               type="submit"
               disabled={isSending}
@@ -380,7 +267,6 @@ export default function EmailSentPage() {
             </button>
           </form>
         </div>
-        
         <div style={{ 
           marginTop: 30, 
           padding: 15,
@@ -388,12 +274,8 @@ export default function EmailSentPage() {
           borderRadius: 6,
           borderLeft: '4px solid #3b82f6'
         }}>
-          <p style={{ 
-            margin: 0, 
-            color: '#1e40af',
-            fontSize: '0.9rem'
-          }}>
-            <strong>Note:</strong> The seller will receive an email with your completed Form 130-U and instructions on how to sign it electronically.
+          <p style={{ margin: 0, color: '#1e40af', fontSize: '0.9rem' }}>
+            <strong>Note:</strong> The seller will receive an email with your completed Form 130-U and a secure link to sign.
           </p>
         </div>
       </div>

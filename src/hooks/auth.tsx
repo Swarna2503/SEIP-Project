@@ -37,15 +37,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  // revise------------------------------------------------------------------
+  // const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  // ------------------------------------------------------------------------
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     // Only check auth status once when the app loads, not on every navigation
-    if (user !== null) return; // Skip if user is already set
+    // if (user !== null) return; // Skip if user is already set
     
-    setLoading(true);
+    // setLoading(true);
     getAPIBaseURL().then((baseURL) => {
       const profileURL = `${baseURL}/api/profile`;
       console.log("[DEBUG] Will fetch profile from:", profileURL);
@@ -59,11 +62,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log("[DEBUG] profile data:", data);
           setUser(data);
         })
-        .catch((err) => {
-          console.warn("[DEBUG] profile error:", err);
+        // .catch((err) => {
+        //   console.warn("[DEBUG] profile error:", err);
+        //   setUser(null);
+        // })
+        // .finally(() => setLoading(false));
+        .catch(() => {
+          // 没登录、token 过期、或者网络失败都算没用户
           setUser(null);
         })
-        .finally(() => setLoading(false));
+        .finally(() => {
+          // 一定要在这里关 loading，才能让下面 PrivateRoute 决定要不要重定向
+          setLoading(false);
+        });
     });
   }, []); // Remove navigate dependency
 

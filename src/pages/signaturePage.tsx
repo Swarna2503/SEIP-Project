@@ -5,10 +5,20 @@ import { fillAndFlattenPdf, type PdfSignature } from '../utils/pdfUtils';
 
 type SigPad = InstanceType<typeof SignatureCanvas>;
 
+interface LocationState {
+  applicationId?:string;
+  titleForm?:Record<string,any>;
+  signatures?:Record<string,string>;
+}
+
 export default function ReviewSubmitPage() {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { titleForm = {}, signatures = {} as Record<string,string> } = (state as any) || {};
+  const {
+    applicationId,
+    titleForm = {},
+    signatures = {}
+  } = (state as LocationState) || {};
 
   const ownerRef      = useRef<SigPad>(null);
   const additionalRef = useRef<SigPad>(null);
@@ -48,14 +58,18 @@ export default function ReviewSubmitPage() {
       const buf = new Uint8Array(await resp.arrayBuffer());
       const out = await fillAndFlattenPdf(buf, titleForm, sigs);
 
+      if (!applicationId) {
+        throw new Error("Missing applicationId");
+      }
       // Navigate to preview page with PDF data
       navigate('/preview', {
         state: {
-          pdfData: out,
-          formData: titleForm,
+          applicationId,
+          pdfData:       out,
+          formData:      titleForm,
           signatures: {
             ...signatures,
-            OwnerSignature: sigs[0].dataUrl,
+            OwnerSignature:      sigs[0].dataUrl,
             AdditionalSignature: sigs[1].dataUrl
           }
         }

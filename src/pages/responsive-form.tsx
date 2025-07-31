@@ -10,6 +10,7 @@ interface LocationState {
   titleOcr?: any;
   titleFile?: File;
   selectedIdType?: string;
+  applicationId?:string;
 }
 
 function getStateAbbrFromFullNameOrAbbr(input: string): string {
@@ -30,8 +31,10 @@ function getStateAbbrFromFullNameOrAbbr(input: string): string {
 export default function ResponsiveFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = location.state as LocationState | undefined;
-  const { ocr: dlOcr, titleOcr, titleFile } = state ?? {};
+  // const state = location.state as LocationState | undefined;
+  // const { ocr: dlOcr, titleOcr, titleFile } = state ?? {};
+  const state = (location.state ?? {}) as LocationState;
+  const { ocr: dlOcr, titleOcr, titleFile, applicationId } = state;
   const [selectedIdType] = useState(() => {
     return sessionStorage.getItem("selectedIdType") || "";
   });
@@ -148,10 +151,15 @@ export default function ResponsiveFormPage() {
       }
       return;
     }
-
+    if (!applicationId) {
+      console.error("Missing applicationId in ResponsiveFormPage");
+      return;
+    }
     navigate("/signature", {
       state: { 
+        applicationId,
         dlOcr, 
+        titleOcr,
         titleFile, 
         titleForm: formState,
         signatures: {
