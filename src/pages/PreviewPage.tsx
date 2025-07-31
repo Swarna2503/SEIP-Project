@@ -183,7 +183,7 @@ export default function PreviewPage() {
           onClick={handleSendToSeller}
           style={{ 
             padding: '12px 18px', 
-            background: 'var(--success)', 
+            background: 'var(--primary)', 
             color: 'var(--lighter)',
             border: 'none',
             borderRadius: 'var(--radius)',
@@ -196,8 +196,8 @@ export default function PreviewPage() {
             boxShadow: 'var(--shadow)'
           }}
           disabled={!pdfUrl}
-          onMouseOver={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--success-dark)')}
-          onMouseOut={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--success)')}
+          onMouseOver={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--secondary)')}
+          onMouseOut={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'var(--primary)')}
         >
           Send to Seller
         </button>

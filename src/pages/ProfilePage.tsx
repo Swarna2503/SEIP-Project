@@ -17,28 +17,6 @@ export default function ProfilePage() {
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // useEffect(() => {
-  //   if (!user?.user_id) return;
-
-  //   async function fetchData() {
-  //     if (!user || !user.user_id) return;
-
-  //     const draftRes = await getDraftApplications(user.user_id);
-  //     if (draftRes.ok && Array.isArray(draftRes.data)) {
-  //       setDrafts(draftRes.data);
-  //     }
-
-  //     const historyRes = await getApplicationHistory(user.user_id);
-  //     if (historyRes.ok && Array.isArray(historyRes.data)) {
-  //       setHistory(historyRes.data);
-  //     }
-
-  //     setLoading(false);
-  //   }
-
-  //   fetchData();
-  // }, [user]);
-
   useEffect(() => {
     if (!user?.user_id) return;
 
@@ -46,20 +24,6 @@ export default function ProfilePage() {
       if (!user || !user.user_id) return;
 
       const draftRes = await getDraftApplications(user.user_id);
-      console.log("DEBUG drafts raw:", draftRes.data);   // ← 在这里打印
-      // 先检查 ok 且 data 是数组
-      if (draftRes.ok && Array.isArray(draftRes.data)) {
-        // 这里用 item 而不是 d，避免报 undefined
-        console.table(
-          draftRes.data.map(item => ({
-            displayId: item.application_display_id,
-            driverLicense: item.driver_license_id,
-            titleDoc: item.title_doc_id,
-          }))
-        );
-
-        setDrafts(draftRes.data);
-      }
       if (draftRes.ok && Array.isArray(draftRes.data)) {
         setDrafts(draftRes.data);
       }
@@ -75,20 +39,17 @@ export default function ProfilePage() {
     fetchData();
   }, [user]);
 
-
-
   const handleDelete = async (applicationId: string) => {
-  const confirmDelete = window.confirm("Are you sure you want to delete this draft?");
-  if (!confirmDelete) return;
+    const confirmDelete = window.confirm("Are you sure you want to delete this draft?");
+    if (!confirmDelete) return;
 
-  const res = await deleteApplication(applicationId);
-  if (res.ok) {
-    setDrafts(prev => prev.filter(app => app.application_id !== applicationId));
-  } else {
-    alert("Failed to delete application.");
-  }
-};
-
+    const res = await deleteApplication(applicationId);
+    if (res.ok) {
+      setDrafts(prev => prev.filter(app => app.application_id !== applicationId));
+    } else {
+      alert("Failed to delete application.");
+    }
+  };
 
   const handleContinue = (applicationId: string) => {
     navigate("/ocr", { state: { applicationId } });
@@ -107,70 +68,183 @@ export default function ProfilePage() {
     if (confirmLogout) logout();
   };
 
-  if (!user) return <p>Please log in to view your profile.</p>;
-  if (loading) return <p>Loading...</p>;
+  if (!user) return <p className="login-prompt">Please log in to view your profile.</p>;
+  if (loading) return <div className="loading-spinner"></div>;
 
   return (
     <div className="profile-wrapper">
-      <h1>👤 Profile</h1>
-      <button onClick={() => navigate("/")} className="back-home-button">🏠 Back to Home</button>
-
-
-      {/* Basic Info */}
-      <div className="profile-section">
-        <h2>Basic Information</h2>
-        <p><strong>Email:</strong> {user.email}</p>
-        <p><strong>User ID:</strong> {user.user_id}</p>
+      <div className="profile-header">
+        <button onClick={() => navigate("/")} className="back-home-button">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+          </svg>
+          Back to Home
+        </button>
+        <h1>Profile Dashboard</h1>
+        <div className="user-info">
+          <div className="user-avatar">
+            {user.email.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div className="user-email">{user.email}</div>
+            <div className="user-id">ID: {user.user_id}</div>
+          </div>
+        </div>
       </div>
 
-      {/* Create New */}
-      <div className="profile-section">
-        <button onClick={handleNew}>📝 Create New Application</button>
-      </div>
+      <div className="profile-container">
+        {/* Create New Application */}
+        <div className="profile-section">
+          <div className="section-header">
+            <h2>Create New Application</h2>
+          </div>
+          <button onClick={handleNew} className="create-button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            Start New Application
+          </button>
+        </div>
 
-      {/* All Drafts */}
-      <div className="profile-section">
-        <h2>Current Draft Applications</h2>
-        {drafts.length > 0 ? (
-          drafts.map((app, idx) => (
-            <div key={idx} className="draft-card">
-              <p><strong>ID:</strong> {app.application_display_id}</p>
-              <p><strong>Created:</strong> {app.created_at ? new Date(app.created_at).toLocaleString() : "N/A"}</p>
-              <p><strong>Last Updated:</strong> {app.updated_at ? new Date(app.updated_at).toLocaleString() : "N/A"}</p>
-              <p><strong>Applicant Name:</strong> {app.full_name || "N/A"}</p>
-              <p><strong>Driver License:</strong> {app.driver_license_id ? "📄 Uploaded" : "❌ Missing"}</p>
-              <p><strong>Title Document:</strong> {app.title_doc_id ? "📄 Uploaded" : "❌ Missing"}</p>
-              <button onClick={() => handleContinue(app.application_id)}>🚗 Continue</button>
-              <button onClick={() => handleDelete(app.application_id)} style={{ marginLeft: "1rem", color: "red" }}>
-                🗑️ Delete
-              </button>
+        {/* Draft Applications */}
+        <div className="profile-section">
+          <div className="section-header">
+            <h2>Draft Applications</h2>
+            <span className="badge">{drafts.length}</span>
+          </div>
+          
+          {drafts.length > 0 ? (
+            <div className="draft-grid">
+              {drafts.map((app, idx) => (
+                <div key={idx} className="draft-card">
+                  <div className="draft-header">
+                    <h3>Application #{app.application_display_id}</h3>
+                    <div className="draft-actions">
+                      <button 
+                        onClick={() => handleContinue(app.application_id)}
+                        className="action-button continue"
+                      >
+                        Continue
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(app.application_id)}
+                        className="action-button delete"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="draft-details">
+                    <div className="detail-item">
+                      <span>Created:</span>
+                      <span>{app.created_at ? new Date(app.created_at).toLocaleString() : "N/A"}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span>Last Updated:</span>
+                      <span>{app.updated_at ? new Date(app.updated_at).toLocaleString() : "N/A"}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span>Applicant:</span>
+                      <span>{app.full_name || "N/A"}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="document-status">
+                    <div className={`status-item ${app.driver_license_id ? "complete" : "incomplete"}`}>
+                      <span>Driver License</span>
+                      {app.driver_license_id ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className={`status-item ${app.title_doc_id ? "complete" : "incomplete"}`}>
+                      <span>Title Document</span>
+                      {app.title_doc_id ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))
-        ) : (
-          <p>No draft applications found.</p>
-        )}
-      </div>
+          ) : (
+            <div className="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+              </svg>
+              <p>No draft applications found</p>
+              <button onClick={handleNew} className="text-button">Create your first application</button>
+            </div>
+          )}
+        </div>
 
-      {/* History */}
-      <div className="profile-section">
-        <h2>History</h2>
-        {history.length > 0 ? (
-          <ul>
-            {history.map((h, idx) => (
-              <li key={idx}>
-                ✔️ {h.application_display_id} - {h.status} - {new Date(h.created_at).toLocaleDateString()}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No past submitted applications.</p>
-        )}
-      </div>
+        {/* Application History */}
+        <div className="profile-section">
+          <div className="section-header">
+            <h2>Application History</h2>
+            <span className="badge">{history.length}</span>
+          </div>
+          
+          {history.length > 0 ? (
+            <div className="history-list">
+              {history.map((h, idx) => (
+                <div key={idx} className="history-item">
+                  <div className="history-id">#{h.application_display_id}</div>
+                  <div className="history-status">{h.status}</div>
+                  <div className="history-date">{new Date(h.created_at).toLocaleDateString()}</div>
+                  <div className="history-actions">
+                    <button className="view-button">
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p>No application history yet</p>
+            </div>
+          )}
+        </div>
 
-      {/* Footer */}
-      <div className="profile-section">
-        <button onClick={() => navigate("/forgot-password")}>🔑 Reset Password</button>
-        <button onClick={handleLogout}>🚪 Logout</button>
+        {/* Footer Actions */}
+        <div className="profile-footer">
+          <button 
+            onClick={() => navigate("/forgot-password")}
+            className="footer-button"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+            Reset Password
+          </button>
+          <button 
+            onClick={handleLogout}
+            className="footer-button logout"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+            </svg>
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   );

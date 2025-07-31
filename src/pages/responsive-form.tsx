@@ -195,7 +195,7 @@ export default function ResponsiveFormPage() {
       </div>
 
       <div className="form-footer">
-        <button className="btn back" onClick={() => navigate(-1)}>
+        <button className="btn-back" onClick={() => navigate(-1)}>
           ← Back
         </button>
 
