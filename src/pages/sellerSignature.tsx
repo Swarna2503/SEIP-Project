@@ -99,13 +99,9 @@ const SignatureCanvas = forwardRef<any, any>((props, ref) => {
 });
 
 export default function SellerSignPage() {
-  // Mock router data for demonstration
-  const token = 'demo-token-123';
-  // const navigate = (path: string) => console.log('Navigate to:', path);
-  const location = { 
-    state: null as { pdfData?: string; applicantInfo?: any } | null 
-  };
-  
+  // Route is defined as /seller-sign/:token
+  const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
   const sellerRef = useRef<any>(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -114,119 +110,88 @@ export default function SellerSignPage() {
   const [signatureName, setSignatureName] = useState('');
   const [signatureDate, setSignatureDate] = useState('');
   const [pdfData, setPdfData] = useState('');
-  const [setApplicantInfo] = useState<any>({});
+  const [overlayUrl, setOverlayUrl] = useState<string|null>(null);
 
+  console.log("Overlay URL:", overlayUrl);
+
+  // ← 把 loadPdf 提到外面，这样可以复用
+  const loadPdf = async () => {
+    try {
+      const res = await getPdfUrl(token!);
+      const url = res.data?.pdfUrl;
+      if (!url) throw new Error('No PDF URL returned');
+      setPdfData(url);
+      setError(null);
+    } catch (err: any) {
+      console.error('[SellerSignPage] loadPdf error', err);
+      setError('Failed to load document: ' + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+ };
+
+  // Fetch PDF URL & set today's date
   useEffect(() => {
-    const loadDocument = () => {
-      try {
-        // Check if we have a token
-        if (!token) {
-          throw new Error('Missing document token');
-        }
-        
-        // Try to get document from state first (for testing in artifacts)
-        if (location.state?.pdfData) {
-          setPdfData(location.state.pdfData);
-          setApplicantInfo(location.state.applicantInfo || {});
-          setIsLoading(false);
-          return;
-        }
-        
-        // In real app, this would check localStorage
-        // For demo purposes, we'll simulate document data
-        const mockPdfData = 'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtsO4w6HDhMOgw6...'; // Mock PDF data
-        const mockApplicantInfo = {
-          applicantName: 'John Doe',
-          applicantEmail: 'john@example.com'
-        };
-        
-        setPdfData(mockPdfData);
-        setApplicantInfo(mockApplicantInfo);
-        
-        // Set current date
-        const today = new Date();
-        setSignatureDate(today.toLocaleDateString('en-US', {
-          month: '2-digit',
-          day: '2-digit',
-          year: 'numeric'
-        }));
-        
-        setIsLoading(false);
-      } catch (e: any) {
-        console.error('Error loading document:', e);
-        setError(e.message || 'Failed to load document');
-        setIsLoading(false);
-      }
-    };
+    const today = new Date();
+    setSignatureDate(
+      today.toLocaleDateString('en-US', {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric'
+      })
+    );
 
-    // Add a small delay to simulate loading
-    setTimeout(loadDocument, 1000);
+    if (!token) {
+      setError('Missing document ID');
+      setIsLoading(false);
+      return;
+    }
+
+    // (async () => {
+    //   try {
+    //     const res = await getPdfUrl(token);
+    //     const url = res.data?.pdfUrl;
+    //     if (!url) throw new Error('No PDF URL returned');
+    //     setPdfData(url);
+    //   } catch (err: any) {
+    //     console.error('[SellerSignPage] loadPdf error', err);
+    //     setError('Failed to load document: ' + err.message);
+    //   } finally {
+    //     setIsLoading(false);
+    //   }
+    // })();
+    setIsLoading(true);
+    loadPdf();
   }, [token]);
 
   const handleSignDocument = async () => {
+    if (!signatureName.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+    if (!sellerRef.current || sellerRef.current.isEmpty()) {
+      setError('Please provide your signature');
+      return;
+    }
+    setIsSubmitting(true);
+    setError(null);
+
     try {
-      // Validation
-      if (!signatureName.trim()) {
-        setError('Please provide your name');
-        return;
-      }
-
-      if (!sellerRef.current) {
-        setError('Signature canvas not available');
-        return;
-      }
-
-      if (sellerRef.current.isEmpty()) {
-        setError('Please provide your signature');
-        return;
-      }
-
-      if (!pdfData) {
-        setError('PDF data is missing');
-        return;
-      }
-
-      setIsSubmitting(true);
-      setError(null);
-
-      // Get signature as data URL
       const canvas = sellerRef.current.getTrimmedCanvas();
-      if (!canvas) {
-        throw new Error('Could not get signature canvas');
-      }
-      
-      const signatureDataUrl = canvas.toDataURL('image/png');
-      
-      // Prepare signature object
-      const signatures = [
-        {
-          key: 'SellerSignature',
-          dataUrl: signatureDataUrl
-        }
+      const dataUrl = canvas.toDataURL('image/png');
+      const signatures: PdfSignature[] = [
+        { key: 'SellerSignature', dataUrl }
       ];
-
-      // In a real app, this would process the PDF
-      console.log('Signing document with:', {
-        name: signatureName,
-        date: signatureDate,
-        signatures: signatures.length
-      });
-
-      // Simulate processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Mock success - in real app this would save the signed document
-      const docId = `signed_${Date.now()}`;
-      
-      // Navigate to confirmation (would need to create this route)
-      console.log('Document signed successfully with ID:', docId);
-      
-      // For demo, just show success message
-      alert('Document signed successfully!');
-      
-    } catch (e: any) {
-      console.error('Error signing document:', e);
-      setError(e.message || 'Failed to sign document');
+      // await submitSignedPdf(token!, signatures);
+      const res = await submitSignedPdf(token!, signatures);
+      if (!res.ok) {
+        throw new Error(`Submit failed: ${res.status}`);
+      }
+      alert('✅ Document signed successfully!');
+      navigate('/', { replace: true });
+    } catch (err: any) {
+      console.error('[SellerSignPage] submit error', err);
+      setError(err.message || 'Failed to submit signature');
     } finally {
       setIsSubmitting(false);
     }
@@ -247,6 +212,7 @@ export default function SellerSignPage() {
     sellerRef.current?.clear();
   };
 
+  // Loading state
   if (isLoading) {
     return (
       <div style={{
@@ -280,6 +246,7 @@ export default function SellerSignPage() {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div style={{
@@ -341,6 +308,7 @@ export default function SellerSignPage() {
     );
   }
 
+  // Main content
   return (
     <div style={{
       padding: 24,
@@ -638,4 +606,3 @@ export default function SellerSignPage() {
     </div>
   );
 }
-
