@@ -1,4 +1,3 @@
-// src/pages/SellerSignPage.tsx
 import React, {
   useRef,
   useEffect,
@@ -8,9 +7,7 @@ import React, {
 } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getPdfUrl, fetchPdfProxy, submitSignedPdf } from '../apis/document';
-import { PDFDocument } from 'pdf-lib';
-
-// type PdfSignature = { key: string; dataUrl: string };
+import { PDFDocument, rgb } from 'pdf-lib';
 
 const SignatureCanvas = forwardRef<any, any>((props, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -31,7 +28,6 @@ const SignatureCanvas = forwardRef<any, any>((props, ref) => {
       const ctx = canvas.getContext('2d');
       if (!ctx) return true;
       const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      // check alpha channel for any non-zero
       return !data.some((v, i) => i % 4 === 3 && v !== 0);
     },
     getTrimmedCanvas: () => {
@@ -87,7 +83,7 @@ const SignatureCanvas = forwardRef<any, any>((props, ref) => {
       height={props.canvasProps?.height || 150}
       style={{
         border: '1px solid #ccc',
-        cursor: 'crosshair',
+        cursor: 'pointer',
         touchAction: 'none',      
         ...props.canvasProps?.style
       }}
@@ -99,8 +95,74 @@ const SignatureCanvas = forwardRef<any, any>((props, ref) => {
   );
 });
 
+// Simple Calendar Component
+const CalendarPicker = ({ onSelect, onClose }: { onSelect: (date: string) => void; onClose: () => void }) => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+  const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+
+  const handleSelectDate = (day: number) => {
+    const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    const formattedDate = selectedDate.toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric'
+    });
+    onSelect(formattedDate);
+    onClose();
+  };
+
+  const prevMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  };
+
+  return (
+    <div style={{
+      position: 'absolute',
+      background: '#334155',
+      padding: 16,
+      borderRadius: 8,
+      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+      zIndex: 1000,
+      color: '#f8fafc',
+      width: 240
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+        <button onClick={prevMonth} style={{ background: 'none', border: 'none', color: '#f8fafc', cursor: 'pointer' }}>&lt;</button>
+        <span>{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+        <button onClick={nextMonth} style={{ background: 'none', border: 'none', color: '#f8fafc', cursor: 'pointer' }}>&gt;</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', fontSize: '0.9rem' }}>
+        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+          <div key={day}>{day}</div>
+        ))}
+        {Array.from({ length: firstDay }).map((_, i) => (
+          <div key={`empty-${i}`} />
+        ))}
+        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => (
+          <div
+            key={day}
+            onClick={() => handleSelectDate(day)}
+            style={{
+              padding: 8,
+              cursor: 'pointer',
+              background: currentDate.getDate() === day ? '#10b981' : 'transparent',
+              borderRadius: 4
+            }}
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default function SellerSignPage() {
-  // Route is defined as /seller-sign/:token
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const sellerRef = useRef<any>(null);
@@ -111,12 +173,9 @@ export default function SellerSignPage() {
   const [signatureName, setSignatureName] = useState('');
   const [signatureDate, setSignatureDate] = useState('');
   const [pdfData, setPdfData] = useState('');
-  const [overlayUrl, setOverlayUrl] = useState<string|null>(null);
-
-  console.log(pdfData);
   const [pdfSrc, setPdfSrc] = useState<string | null>(null);
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer|null>(null);
-  console.log("Overlay URL:", overlayUrl);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const loadPdf = async () => {
     try {
@@ -131,19 +190,9 @@ export default function SellerSignPage() {
     } finally {
       setIsLoading(false);
     }
- };
+  };
 
-  // Fetch PDF URL & set today's date
   useEffect(() => {
-    const today = new Date();
-    setSignatureDate(
-      today.toLocaleDateString('en-US', {
-        month: '2-digit',
-        day: '2-digit',
-        year: 'numeric'
-      })
-    );
-
     if (!token) {
       setError('Missing document ID');
       setIsLoading(false);
@@ -161,7 +210,6 @@ export default function SellerSignPage() {
     })();
   }, [token]);
 
-  // generate blob URL
   useEffect(() => {
     if (!pdfBytes) return;
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -169,6 +217,57 @@ export default function SellerSignPage() {
     setPdfSrc(url);
     return () => URL.revokeObjectURL(url);
   }, [pdfBytes]);
+
+  const embedSignatureInPdf = async (canvas: HTMLCanvasElement): Promise<string> => {
+    const dataUrl = canvas.toDataURL('image/png');
+    const arrayBuffer = await fetchPdfProxy(token!);
+    const pdfDoc = await PDFDocument.load(arrayBuffer);
+    
+    // Embed signature image
+    const pngImage = await pdfDoc.embedPng(dataUrl);
+    const page = pdfDoc.getPages()[0];
+    page.drawImage(pngImage, {
+      x: 25,
+      y: 85,
+      width: 200,
+      height: 15,
+    });
+
+    // Get the form and embed text fields
+    const form = pdfDoc.getForm();
+    
+    // Embed sellerName
+    try {
+      const sellerNameField = form.getTextField('sellerName');
+      sellerNameField.setText(signatureName);
+    } catch (err) {
+      console.warn('Seller name field not found, adding as text');
+      page.drawText(signatureName, {
+        x: 25,
+        y: 105,
+        size: 12,
+        color: rgb(0, 0, 0),
+      });
+    }
+
+    // Embed sellerDate
+    try {
+      const sellerDateField = form.getTextField('sellerDate');
+      sellerDateField.setText(signatureDate);
+    } catch (err) {
+      console.warn('Seller date field not found, adding as text');
+      page.drawText(signatureDate, {
+        x: 225,
+        y: 85,
+        size: 12,
+        color: rgb(0, 0, 0),
+      });
+    }
+
+    const signedBytes = await pdfDoc.save();
+    const blob = new Blob([signedBytes], { type: 'application/pdf' });
+    return URL.createObjectURL(blob);
+  };
 
   const handleSignDocument = async () => {
     if (!signatureName.trim()) {
@@ -179,40 +278,31 @@ export default function SellerSignPage() {
       setError('Please provide your signature');
       return;
     }
+    if (!signatureDate) {
+      setError('Please select a valid date');
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
 
     try {
       const canvas = sellerRef.current.getTrimmedCanvas();
-      const dataUrl = canvas.toDataURL('image/png');
-      const arrayBuffer = await fetchPdfProxy(token!);
-    
-      // 3) use pdf-lib kick it to pdf
-      const pdfDoc = await PDFDocument.load(arrayBuffer);
-      const pngImage = await pdfDoc.embedPng(dataUrl);
-      const page = pdfDoc.getPages()[0];        
-      const { width } = page.getSize();
-      page.drawImage(pngImage, {
-        x: width - 220, 
-        y: 50,
-        width: 200,
-        height: 75,
-      });
+      const signedPdfUrl = await embedSignatureInPdf(canvas);
 
-     
-      const signedBytes = await pdfDoc.save();
+      const response = await fetch(signedPdfUrl);
+      const signedBytes = new Uint8Array(await response.arrayBuffer());
 
       function arrayBufferToBase64(buffer: ArrayBuffer): string {
-      let binary = '';
-      const bytes = new Uint8Array(buffer);
-      for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        for (let i = 0; i < bytes.byteLength; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
       }
-      return window.btoa(binary);
-    }
-    const signedPdfBase64 =
-      'data:application/pdf;base64,' +
-      arrayBufferToBase64(signedBytes);
+      const signedPdfBase64 =
+        'data:application/pdf;base64,' +
+        arrayBufferToBase64(signedBytes);
 
       const res = await submitSignedPdf(token!, signedPdfBase64);
       if (!res.ok) {
@@ -221,7 +311,6 @@ export default function SellerSignPage() {
 
       alert('✅ Document signed successfully!');
       navigate('/', { replace: true });
-
     } catch (err: any) {
       console.error('[SellerSignPage] submit error', err);
       setError(err.message || 'Failed to submit signature');
@@ -230,23 +319,25 @@ export default function SellerSignPage() {
     }
   };
 
-  // add new ------------------------------------------------
-  const handlePreview = () => {
-  if (!sellerRef.current || sellerRef.current.isEmpty()) {
-    setError("Please Sign first, then preview");
-    return;
-  }
-  const canvas = sellerRef.current.getTrimmedCanvas();
-  setOverlayUrl(canvas.toDataURL("image/png"));
-};
-
+  const handlePreview = async () => {
+    if (!sellerRef.current || sellerRef.current.isEmpty()) {
+      setError("Please Sign first, then preview");
+      return;
+    }
+    const canvas = sellerRef.current.getTrimmedCanvas();
+    const signedPdfUrl = await embedSignatureInPdf(canvas);
+    setPdfSrc(signedPdfUrl);
+  };
 
   const handleClear = () => {
     sellerRef.current?.clear();
-    setOverlayUrl(null);
+    if (pdfBytes) {
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      setPdfSrc(url);
+    }
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <div style={{
@@ -280,7 +371,6 @@ export default function SellerSignPage() {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div style={{
@@ -342,7 +432,6 @@ export default function SellerSignPage() {
     );
   }
 
-  // Main content
   return (
     <div style={{
       padding: 24,
@@ -388,13 +477,19 @@ export default function SellerSignPage() {
         <div>
           <div style={{
             background: 'linear-gradient(135deg,#334155,#475569)',
-            borderRadius: 12, boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+            borderRadius: 12, 
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
             border: '1px solid rgba(255,255,255,0.1)',
-            position: 'relative', overflow: 'auto', height: '100vh'
+            position: 'relative', 
+            overflow: 'auto', 
+            height: '100vh'
           }}>
             <div style={{
-              background: 'rgba(30,41,59,0.6)', padding: '16px 24px',
-              fontWeight: 600, fontSize: '1.1rem', color: '#e2e8f0',
+              background: 'rgba(30,41,59,0.6)', 
+              padding: '16px 24px',
+              fontWeight: 600, 
+              fontSize: '1.1rem', 
+              color: '#e2e8f0',
               borderBottom: '1px solid rgba(255,255,255,0.1)'
             }}>
               Document Preview
@@ -405,7 +500,8 @@ export default function SellerSignPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#94a3b8'
+              color: '#94a3b8',
+              position: 'relative'
             }}>
               {pdfSrc && (
                 <iframe
@@ -415,26 +511,10 @@ export default function SellerSignPage() {
                   height="100%"
                   style={{ border: 'none', display: 'block' }}
                 />
-              )}            
-
-            {overlayUrl && (
-              <img
-                src={overlayUrl}
-                alt="Signature preview"
-                style={{
-                  position: 'absolute',
-                  top:  610,
-                  left: 460,
-                  width: 200,
-                  opacity: 0.8,
-                  pointerEvents: 'none'
-                }}
-              />
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </div>
-
 
         {/* Signing Section */}
         <div style={{
@@ -485,7 +565,7 @@ export default function SellerSignPage() {
             />
           </div>
 
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ marginBottom: 24, position: 'relative' }}>
             <label style={{
               display: 'block',
               marginBottom: 12,
@@ -498,17 +578,28 @@ export default function SellerSignPage() {
             <input
               type="text"
               value={signatureDate}
-              readOnly
+              onChange={e => setSignatureDate(e.target.value)}
+              onClick={() => setShowCalendar(true)}
+              placeholder="MM/DD/YYYY"
               style={{
                 width: '100%',
                 padding: '14px 16px',
                 borderRadius: 8,
                 border: '1px solid rgba(255,255,255,0.1)',
                 backgroundColor: 'rgba(15,23,42,0.5)',
-                cursor: 'not-allowed',
-                color: '#94a3b8'
+                color: '#f8fafc',
+                cursor: 'pointer'
               }}
             />
+            {showCalendar && (
+              <CalendarPicker
+                onSelect={date => {
+                  setSignatureDate(date);
+                  setShowCalendar(false);
+                }}
+                onClose={() => setShowCalendar(false)}
+              />
+            )}
           </div>
 
           <div style={{ marginBottom: 24 }}>
@@ -529,8 +620,8 @@ export default function SellerSignPage() {
             }}>
               <SignatureCanvas
                 ref={sellerRef}
-                penColor="#f8fafc"
-                backgroundColor="rgba(15,23,42,0.3)"
+                penColor="#000000"
+                backgroundColor="#ffffff"
                 canvasProps={{ width: 350, height: 150 }}
               />
             </div>
@@ -550,8 +641,8 @@ export default function SellerSignPage() {
             </button>
             
             <button 
-             onClick={handlePreview}
-             style={{
+              onClick={handlePreview}
+              style={{
                 marginTop: 12,
                 padding: '10px 20px',
                 background: 'rgba(15,23,42,0.5)',
@@ -560,7 +651,7 @@ export default function SellerSignPage() {
                 borderRadius: 8,
                 cursor: 'pointer'
               }}
-             >
+            >
               Preview Signature
             </button>
           </div>

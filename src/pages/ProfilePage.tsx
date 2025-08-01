@@ -16,6 +16,8 @@ export default function ProfilePage() {
   const [drafts, setDrafts] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<any>(null);
 
   useEffect(() => {
     if (!user?.user_id) return;
@@ -175,6 +177,15 @@ export default function ProfilePage() {
                         Continue
                       </button>
                       <button 
+                        onClick={() => handleStatus(app.application_id)}
+                        className="action-button status"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                        </svg>
+                        Status
+                      </button>
+                      <button 
                         onClick={() => handleDelete(app.application_id)}
                         className="action-button delete"
                       >
@@ -263,7 +274,10 @@ export default function ProfilePage() {
                   <div className="history-status">{h.status}</div>
                   <div className="history-date">{new Date(h.created_at).toLocaleDateString()}</div>
                   <div className="history-actions">
-                    <button className="view-button">
+                    <button 
+                      onClick={() => handleStatus(h.application_id)}
+                      className="view-button"
+                    >
                       View Details
                     </button>
                   </div>
@@ -279,6 +293,64 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+
+        {/* Status Modal */}
+        {showStatusModal && selectedApplication && (
+          <div className="modal-overlay">
+            <div className="status-modal">
+              <div className="modal-header">
+                <h3>Application Status</h3>
+                <button onClick={() => setShowStatusModal(false)} className="close-button">
+                  &times;
+                </button>
+              </div>
+              <div className="modal-body">
+                <div className="status-detail">
+                  <span>Application ID:</span>
+                  <span>{selectedApplication.application_display_id}</span>
+                </div>
+                <div className="status-detail">
+                  <span>Current Status:</span>
+                  <span className={`status-badge ${selectedApplication.status?.toLowerCase() || 'pending'}`}>
+                    {selectedApplication.status || 'Pending'}
+                  </span>
+                </div>
+                <div className="status-detail">
+                  <span>Created:</span>
+                  <span>{new Date(selectedApplication.created_at).toLocaleString()}</span>
+                </div>
+                <div className="status-detail">
+                  <span>Last Updated:</span>
+                  <span>{new Date(selectedApplication.updated_at).toLocaleString()}</span>
+                </div>
+                {selectedApplication.driver_license_id && (
+                  <div className="status-detail">
+                    <span>Driver License:</span>
+                    <span className="status-complete">Uploaded</span>
+                  </div>
+                )}
+                {selectedApplication.title_doc_id && (
+                  <div className="status-detail">
+                    <span>Title Document:</span>
+                    <span className="status-complete">Uploaded</span>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button 
+                  onClick={() => {
+                    navigate("/ocr", { state: { applicationId: selectedApplication.application_id } });
+                    setShowStatusModal(false);
+                  }}
+                  className="modal-button"
+                  disabled={selectedApplication.status === 'Completed'}
+                >
+                  {selectedApplication.status === 'Completed' ? 'Application Completed' : 'Continue Application'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Footer Actions */}
         <div className="profile-footer">

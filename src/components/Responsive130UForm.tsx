@@ -711,20 +711,7 @@ export const fields: FieldDef[] = [
   { id: "correctedTitleLost", label: "I am applying for a corrected title and the original Texas Certificate of Title is lost or destroyed.", type: "checkbox" },
   
   // Signatures - Updated to be required
-  { 
-    id: "sellerName",               
-    label: "Seller Name",                                      
-    type: "text",
-    required: true,
-    validation: validators.required
-  },
-  { 
-    id: "sellerDate",               
-    label: "Date",                                             
-    type: "text",
-    required: true,
-    validation: (value) => validators.required(value) || validators.date(value)
-  },
+
   { 
     id: "applicantOwner",           
     label: "Applicant Owner",                                  
@@ -734,7 +721,7 @@ export const fields: FieldDef[] = [
   },
   { 
     id: "applicantDate",            
-    label: "Date_2",                                           
+    label: "Date",                                           
     type: "text",
     required: true,
     validation: (value) => validators.required(value) || validators.date(value)
@@ -793,9 +780,9 @@ const sections: SectionDef[] = [
   { title: "Contact & Attachments", from: 64, to: 67 },
   { title: "Vehicle Location & E-Title", from: 68, to: 73 },
   { title: "Lien Information", from: 74, to: 80 },
-  { title: "Dealership & Trade-Ins", from: 81, to: 89 },
-  { title: "Sales & Use Tax", from: 90, to: 114 },
-  { title: "Certify & Signatures(Check if applicable)", from: 115, to: 123 }
+  { title: "Dealership & Trade-Ins", from: 81, to: 90 },
+  { title: "Sales & Use Tax", from: 91, to: 114 },
+  { title: "Certify & Signatures(Check if applicable)", from: 115, to: 120 }
 ];
 
 type SigPad = InstanceType<typeof SignatureCanvas>;
@@ -825,7 +812,7 @@ export default function Responsive130UForm({
   useEffect(() => {
     setFormState(prev => {
       const next = { ...prev };
-      ["sellerDate", "applicantDate"].forEach(id => {
+      ["applicantDate"].forEach(id => {
         if (!next[id]) next[id] = getToday();
       });
       return next;
