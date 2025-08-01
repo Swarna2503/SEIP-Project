@@ -16,23 +16,19 @@ interface LocationState {
 function getStateAbbrFromFullNameOrAbbr(input: string): string {
   if (!input) return "";
   const trimmed = input.trim();
-  // 直接是缩写
   if (STATE_NAMES[trimmed.toUpperCase()]) return trimmed.toUpperCase();
-  // 是全名，查映射
   for (const [abbr, full] of Object.entries(STATE_NAMES)) {
     if (full.toLowerCase() === trimmed.toLowerCase()) {
       return abbr;
     }
   }
-  return trimmed; // fallback
+  return trimmed;
 }
 
 
 export default function ResponsiveFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  // const state = location.state as LocationState | undefined;
-  // const { ocr: dlOcr, titleOcr, titleFile } = state ?? {};
   const state = (location.state ?? {}) as LocationState;
   const { ocr: dlOcr, titleOcr, titleFile, applicationId } = state;
   const [selectedIdType] = useState(() => {

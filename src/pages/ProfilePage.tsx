@@ -108,6 +108,12 @@ export default function ProfilePage() {
     }
   };
 
+  const handleStatus = (applicationId: string) => {
+    const app = [...drafts, ...history].find(a => a.application_id === applicationId);
+    setSelectedApplication(app);
+    setShowStatusModal(true);
+  };
+
   const handleLogout = () => {
     const confirmLogout = window.confirm("Are you sure you want to log out?");
     if (confirmLogout) logout();
@@ -339,13 +345,15 @@ export default function ProfilePage() {
               <div className="modal-footer">
                 <button 
                   onClick={() => {
-                    navigate("/ocr", { state: { applicationId: selectedApplication.application_id } });
+                    handleContinue(selectedApplication);
                     setShowStatusModal(false);
                   }}
                   className="modal-button"
-                  disabled={selectedApplication.status === 'Completed'}
+                  disabled={selectedApplication.status === "application_complete"}
                 >
-                  {selectedApplication.status === 'Completed' ? 'Application Completed' : 'Continue Application'}
+                  {selectedApplication.status === "application_complete"
+                    ? "Application Completed"
+                    : "Continue Application"}     
                 </button>
               </div>
             </div>
