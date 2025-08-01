@@ -7,9 +7,10 @@ import React, {
   useImperativeHandle
 } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getPdfUrl, submitSignedPdf } from '../apis/document';
+import { getPdfUrl, fetchPdfProxy, submitSignedPdf } from '../apis/document';
+import { PDFDocument } from 'pdf-lib';
 
-type PdfSignature = { key: string; dataUrl: string };
+// type PdfSignature = { key: string; dataUrl: string };
 
 const SignatureCanvas = forwardRef<any, any>((props, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -87,7 +88,7 @@ const SignatureCanvas = forwardRef<any, any>((props, ref) => {
       style={{
         border: '1px solid #ccc',
         cursor: 'crosshair',
-        touchAction: 'none',             // ← 禁掉默认滚动/缩放
+        touchAction: 'none',      
         ...props.canvasProps?.style
       }}
       onPointerDown={startDrawing}
@@ -112,9 +113,11 @@ export default function SellerSignPage() {
   const [pdfData, setPdfData] = useState('');
   const [overlayUrl, setOverlayUrl] = useState<string|null>(null);
 
+  console.log(pdfData);
+  const [pdfSrc, setPdfSrc] = useState<string | null>(null);
+  const [pdfBytes, setPdfBytes] = useState<ArrayBuffer|null>(null);
   console.log("Overlay URL:", overlayUrl);
 
-  // ← 把 loadPdf 提到外面，这样可以复用
   const loadPdf = async () => {
     try {
       const res = await getPdfUrl(token!);
@@ -146,23 +149,26 @@ export default function SellerSignPage() {
       setIsLoading(false);
       return;
     }
-
-    // (async () => {
-    //   try {
-    //     const res = await getPdfUrl(token);
-    //     const url = res.data?.pdfUrl;
-    //     if (!url) throw new Error('No PDF URL returned');
-    //     setPdfData(url);
-    //   } catch (err: any) {
-    //     console.error('[SellerSignPage] loadPdf error', err);
-    //     setError('Failed to load document: ' + err.message);
-    //   } finally {
-    //     setIsLoading(false);
-    //   }
-    // })();
     setIsLoading(true);
     loadPdf();
   }, [token]);
+
+  useEffect(() => {
+    (async () => {
+      if (!token) return;
+      const arrayBuffer = await fetchPdfProxy(token!);
+      setPdfBytes(arrayBuffer);
+    })();
+  }, [token]);
+
+  // generate blob URL
+  useEffect(() => {
+    if (!pdfBytes) return;
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    setPdfSrc(url);
+    return () => URL.revokeObjectURL(url);
+  }, [pdfBytes]);
 
   const handleSignDocument = async () => {
     if (!signatureName.trim()) {
@@ -179,16 +185,43 @@ export default function SellerSignPage() {
     try {
       const canvas = sellerRef.current.getTrimmedCanvas();
       const dataUrl = canvas.toDataURL('image/png');
-      const signatures: PdfSignature[] = [
-        { key: 'SellerSignature', dataUrl }
-      ];
-      // await submitSignedPdf(token!, signatures);
-      const res = await submitSignedPdf(token!, signatures);
+      const arrayBuffer = await fetchPdfProxy(token!);
+    
+      // 3) use pdf-lib kick it to pdf
+      const pdfDoc = await PDFDocument.load(arrayBuffer);
+      const pngImage = await pdfDoc.embedPng(dataUrl);
+      const page = pdfDoc.getPages()[0];        
+      const { width } = page.getSize();
+      page.drawImage(pngImage, {
+        x: width - 220, 
+        y: 50,
+        width: 200,
+        height: 75,
+      });
+
+     
+      const signedBytes = await pdfDoc.save();
+
+      function arrayBufferToBase64(buffer: ArrayBuffer): string {
+      let binary = '';
+      const bytes = new Uint8Array(buffer);
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return window.btoa(binary);
+    }
+    const signedPdfBase64 =
+      'data:application/pdf;base64,' +
+      arrayBufferToBase64(signedBytes);
+
+      const res = await submitSignedPdf(token!, signedPdfBase64);
       if (!res.ok) {
         throw new Error(`Submit failed: ${res.status}`);
       }
+
       alert('✅ Document signed successfully!');
       navigate('/', { replace: true });
+
     } catch (err: any) {
       console.error('[SellerSignPage] submit error', err);
       setError(err.message || 'Failed to submit signature');
@@ -210,6 +243,7 @@ export default function SellerSignPage() {
 
   const handleClear = () => {
     sellerRef.current?.clear();
+    setOverlayUrl(null);
   };
 
   // Loading state
@@ -353,40 +387,54 @@ export default function SellerSignPage() {
         {/* Document Preview */}
         <div>
           <div style={{
-            background: 'linear-gradient(135deg, #334155, #475569)',
-            borderRadius: 12,
-            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-            overflow: 'hidden',
-            border: '1px solid rgba(255,255,255,0.1)'
+            background: 'linear-gradient(135deg,#334155,#475569)',
+            borderRadius: 12, boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            position: 'relative', overflow: 'auto', height: '100vh'
           }}>
             <div style={{
-              background: 'rgba(30,41,59,0.6)',
-              padding: '16px 24px',
-              fontWeight: 600,
-              fontSize: '1.1rem',
-              color: '#e2e8f0',
+              background: 'rgba(30,41,59,0.6)', padding: '16px 24px',
+              fontWeight: 600, fontSize: '1.1rem', color: '#e2e8f0',
               borderBottom: '1px solid rgba(255,255,255,0.1)'
             }}>
               Document Preview
             </div>
-            <div style={{
-              height: '70vh',
+            <div style={{ 
+              height: '100vh',
               backgroundColor: '#0f172a',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#94a3b8'
             }}>
-              <iframe
-                src={pdfData}
-                title="Document to sign"
-                width="100%"
-                height="100%"
-                style={{ border: 'none' }}
+              {pdfSrc && (
+                <iframe
+                  src={pdfSrc}
+                  title="Document to sign"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 'none', display: 'block' }}
+                />
+              )}            
+
+            {overlayUrl && (
+              <img
+                src={overlayUrl}
+                alt="Signature preview"
+                style={{
+                  position: 'absolute',
+                  top:  610,
+                  left: 460,
+                  width: 200,
+                  opacity: 0.8,
+                  pointerEvents: 'none'
+                }}
               />
-            </div>
+            )}
           </div>
         </div>
+      </div>
+
 
         {/* Signing Section */}
         <div style={{
