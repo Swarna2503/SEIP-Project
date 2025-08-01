@@ -19,6 +19,32 @@ export default function ProfilePage() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
 
+  // Mock data for testing - remove when backend provides real data
+  const mockHistoryData = [
+    {
+      application_id: "app1",
+      application_display_id: "1001",
+      status: "Completed",
+      created_at: "2023-06-15T10:30:00Z",
+      updated_at: "2023-06-15T11:45:00Z",
+      pdf_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", // Public test PDF
+      full_name: "John Doe",
+      driver_license_id: "dl123",
+      title_doc_id: "td456"
+    },
+    {
+      application_id: "app2",
+      application_display_id: "1002",
+      status: "Processing",
+      created_at: "2023-06-10T09:15:00Z",
+      updated_at: "2023-06-10T09:15:00Z",
+      pdf_url: null,
+      full_name: "Jane Smith",
+      driver_license_id: "dl789",
+      title_doc_id: null
+    }
+  ];
+
   useEffect(() => {
     if (!user?.user_id) return;
 
@@ -32,7 +58,11 @@ export default function ProfilePage() {
 
       const historyRes = await getApplicationHistory(user.user_id);
       if (historyRes.ok && Array.isArray(historyRes.data)) {
-        setHistory(historyRes.data);
+        // For now, combine mock data with real data
+        setHistory([...historyRes.data, ...mockHistoryData]);
+      } else {
+        // If API fails, use mock data
+        setHistory(mockHistoryData);
       }
 
       setLoading(false);
@@ -221,8 +251,12 @@ export default function ProfilePage() {
               {history.map((h, idx) => (
                 <div key={idx} className="history-item">
                   <div className="history-id">#{h.application_display_id}</div>
-                  <div className="history-status">{h.status}</div>
-                  <div className="history-date">{new Date(h.created_at).toLocaleDateString()}</div>
+                  <div className={`history-status ${h.status?.toLowerCase()}`}>
+                    {h.status}
+                  </div>
+                  <div className="history-date">
+                    {new Date(h.created_at).toLocaleDateString()}
+                  </div>
                   <div className="history-actions">
                     <button 
                       onClick={() => handleStatus(h.application_id)}
@@ -230,6 +264,24 @@ export default function ProfilePage() {
                     >
                       View Details
                     </button>
+                    {h.status === 'Completed' && (
+                      <a
+                        href={h.pdf_url || '#'}
+                        className={`download-button ${!h.pdf_url ? 'disabled' : ''}`}
+                        download={`application_${h.application_display_id}.pdf`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={!h.pdf_url ? (e) => {
+                          e.preventDefault();
+                          alert('PDF download will be available when the backend implementation is complete');
+                        } : undefined}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        Download PDF
+                      </a>
+                    )}
                   </div>
                 </div>
               ))}
@@ -283,6 +335,20 @@ export default function ProfilePage() {
                   <div className="status-detail">
                     <span>Title Document:</span>
                     <span className="status-complete">Uploaded</span>
+                  </div>
+                )}
+                {selectedApplication.status === 'Completed' && selectedApplication.pdf_url && (
+                  <div className="status-detail">
+                    <span>Document:</span>
+                    <a
+                      href={selectedApplication.pdf_url}
+                      className="download-link"
+                      download={`application_${selectedApplication.application_display_id}.pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Download PDF
+                    </a>
                   </div>
                 )}
               </div>
