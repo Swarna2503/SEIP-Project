@@ -25,10 +25,24 @@ export interface Responsive130UFormProps {
 // get today's calendar
 const getToday = () => {
   const today = new Date();
-  const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+  const yyyy = today.getFullYear();
+  return `${mm}-${dd}-${yyyy}`; // Keep as MM-DD-YYYY for storage
+};
+
+// Converts MM-DD-YYYY → YYYY-MM-DD (for browser date input)
+const formatForDateInput = (dateStr: string) => {
+  if (!dateStr) return "";
+  const [month, day, year] = dateStr.split("-");
+  return `${year}-${month}-${day}`;
+};
+
+// Converts YYYY-MM-DD → MM-DD-YYYY (for storage)
+const parseDateInput = (dateStr: string) => {
+  if (!dateStr) return "";
+  const [year, month, day] = dateStr.split("-");
+  return `${month.padStart(2, "0")}-${day.padStart(2, "0")}-${year}`; // Ensure 2-digit months/days
 };
 
 
@@ -87,15 +101,20 @@ const validators = {
     if (value && !/^\d{10}$/.test(value)) return "Must be 10-digit phone number";
     return null;
   },
-  // date: (value: string) => {
-  //   if (value && !/^(0[1-9]|1[0-2])\/\d{2}\/\d{4}$/.test(value))
-  //     return "Must be in MM/DD/YYYY format";
-  //   return null;
-  // },
   date: (value: string) => {
     if (!value) return null;
-    if (!/^\d{4}-(0[1-9]|1[0-2])-\d{2}$/.test(value)) {
-      return "Must be in YYYY-MM-DD format";
+    if (!/^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/.test(value)) {
+      return "Must be in MM-DD-YYYY format";
+    }
+    const [month, day, year] = value.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // Set to end of today
+    if (date > today) {
+      return "Date cannot be in the future";
+    }
+    if (date.getMonth() + 1 !== month || date.getDate() !== day || date.getFullYear() !== year) {
+      return "Invalid date";
     }
     return null;
   },
@@ -735,7 +754,7 @@ export const fields: FieldDef[] = [
   },
   { 
     id: "additionalApplicantDate",  
-    label: "Date_3",                                           
+    label: "Date",                                           
     type: "text",
     validation: (value, formState) => 
       validators.signatureBlock("additionalApplicant", "additionalApplicantDate", formState) || validators.date(value)
@@ -782,7 +801,7 @@ const sections: SectionDef[] = [
   { title: "Lien Information", from: 74, to: 80 },
   { title: "Dealership & Trade-Ins", from: 81, to: 90 },
   { title: "Sales & Use Tax", from: 91, to: 114 },
-  { title: "Certify & Signatures(Check if applicable)", from: 115, to: 120 }
+  { title: "Certify & Signatures(Check if applicable)", from: 115, to: 122}
 ];
 
 type SigPad = InstanceType<typeof SignatureCanvas>;
@@ -809,19 +828,16 @@ export default function Responsive130UForm({
     return state;
   });
 
-  useEffect(() => {
-    setFormState(prev => {
-      const next = { ...prev };
-      ["applicantDate"].forEach(id => {
-        if (!next[id]) next[id] = getToday();
-      });
-      return next;
-    });
-  }, []);
-
-  console.log("formState[previousOwnerState] = ", formState["previousOwnerState"]);
-  console.log("formState.sellerDate =", formState.sellerDate);
-
+ useEffect(() => {
+  setFormState(prev => {
+    const next = { ...prev };
+    // Only set applicantDate by default, not additionalApplicantDate
+    if (!next.applicantDate) {
+      next.applicantDate = getToday();
+    }
+    return next;
+  });
+}, []);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -892,7 +908,7 @@ export default function Responsive130UForm({
     const showError = (touched[f.id] || showAllErrors) && err;
     const showAsterisk = f.required && f.id !== "individual" && f.id !== "usDriverLicense";
     // 日期字段优先判断
-    const dateFieldIds = ["sellerDate", "applicantDate", "additionalApplicantDate"];
+    const dateFieldIds = ["applicantDate", "additionalApplicantDate", "firstLienDate"];
     const isDateField = dateFieldIds.includes(f.id);
     if (isDateField) {
       return (
@@ -903,11 +919,12 @@ export default function Responsive130UForm({
           </label>
           <input
             id={f.id}
-            type="date"
-            defaultValue={formState[f.id] ?? getToday()} 
-            max={getToday()}
-            onFocus={() => console.log("On focus:", f.id, "→", formState[f.id])}
-            onChange={e => handleChange(f.id, e.target.value)}
+            type="date" // Enables native picker
+            value={formatForDateInput(formState[f.id])} // Convert MM-DD-YYYY → YYYY-MM-DD (for browser)
+            onChange={(e) => {
+              const formattedDate = parseDateInput(e.target.value); // Convert YYYY-MM-DD → MM-DD-YYYY (for storage)
+              handleChange(f.id, formattedDate);
+            }}
             className={`form-input ${showError ? 'input-error' : ''}`}
           />
           {showError && <div className="error-message">{err}</div>}
@@ -1025,7 +1042,7 @@ export default function Responsive130UForm({
               onClick={() => section.collapsible && toggleSection(section.title)}
               style={section.collapsible ? { cursor: "pointer" } : {}}
             >
-              <h2 className="section-title">
+              <div className="section-title">
                 {section.title}
                 {section.required && <span className="text-red-500">*</span>}
                 {section.collapsible && (
@@ -1033,7 +1050,7 @@ export default function Responsive130UForm({
                     {isExpanded ? "▼" : "►"}
                   </span>
                 )}
-              </h2>
+              </div>
             </div>
             
             {isExpanded && (

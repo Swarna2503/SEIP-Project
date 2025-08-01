@@ -1,5 +1,5 @@
 import  { useState, useEffect } from "react";
-import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Responsive130UForm from "../components/Responsive130UForm";
 import { fields } from "../components/Responsive130UForm";
 import { STATE_NAMES } from "../utils/stateAbbreviations";
@@ -10,7 +10,7 @@ interface LocationState {
   titleOcr?: any;
   titleFile?: File;
   selectedIdType?: string;
-  applicationId?:string;
+  applicationId?: string;
 }
 
 function getStateAbbrFromFullNameOrAbbr(input: string): string {
@@ -25,11 +25,11 @@ function getStateAbbrFromFullNameOrAbbr(input: string): string {
   return trimmed;
 }
 
-
 export default function ResponsiveFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { applicationId: paramAppId } = useParams<{ applicationId: string }>();
+  // const state = location.state as LocationState | undefined;
+  // const { ocr: dlOcr, titleOcr, titleFile } = state ?? {};
   const state = (location.state ?? {}) as LocationState;
   const appId = state.applicationId || paramAppId;
   const { ocr: dlOcr, titleOcr, titleFile, applicationId } = state;
@@ -37,54 +37,7 @@ export default function ResponsiveFormPage() {
     return sessionStorage.getItem("selectedIdType") || "";
   });
 
-  // 3) 增加加载状态、后端数据存放
-  const [loading, setLoading] = useState(true);
-  const [backendData, setBackendData] = useState<{
-    dlOcr?: any;
-    titleOcr?: any;
-    selectedIdType?: string;
-  }>({});
-
-  // 4) 如果本地没有 OCR，向后端请求
-  useEffect(() => {
-    if ((!dlOcr || !titleOcr) && appId) {
-      fetch(`/api/applications/${appId}`)
-        .then(res => {
-          if (!res.ok) throw new Error("fetch failed");
-          return res.json();
-        })
-        .then(data => {
-          setBackendData({
-            dlOcr: data.dlOcr,
-            titleOcr: data.titleOcr,
-            selectedIdType: data.selectedIdType,
-          });
-        })
-        .catch(err => {
-          console.error("加载申请数据失败", err);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
-  }, [dlOcr, titleOcr, appId]);
-
-  // 5) 根据优先级决定传给 mapOcrToFormValues 的参数
-  const effectiveDlOcr    = dlOcr    ?? backendData.dlOcr;
-  const effectiveTitleOcr = titleOcr ?? backendData.titleOcr;
-  const effectiveIdType   = selectedIdType || backendData.selectedIdType || "";
-
-  // 6) 只有加载完毕才渲染表单
-  const [formState, setFormState] = useState(() =>
-    mapOcrToFormValues(effectiveDlOcr, effectiveTitleOcr, effectiveIdType)
-  );
-  useEffect(() => {
-    if (!loading) {
-      setFormState(mapOcrToFormValues(effectiveDlOcr, effectiveTitleOcr, effectiveIdType));
-    }
-  }, [loading, effectiveDlOcr, effectiveTitleOcr, effectiveIdType]);
-
-
+  
   const [formValid, setFormValid] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showAllErrors, setShowAllErrors] = useState(false);
@@ -98,10 +51,10 @@ export default function ResponsiveFormPage() {
     // Map selectedIdType to corresponding checkbox key
     const idTypeMap: Record<string, keyof typeof defaults> = {
       "U.S. Driver License/ID Card": "usDriverLicense",
-      "US Military ID":              "usMilitaryId",
-      "Passport":                  "passport",
-      "NATO ID":                     "natoId",
-      "Immigration":                "uscisId",
+      "US Military ID": "usMilitaryId",
+      "Passport": "passport",
+      "NATO ID": "natoId",
+      "Immigration": "uscisId",
     };
 
     // Prepare ID checkbox group
@@ -116,8 +69,7 @@ export default function ResponsiveFormPage() {
     // 2) auto-fill values from OCR data
     const fullAddress = titleOcr?.owner_address ?? "";
     const parts = fullAddress.split(",").map((s: string) => s.trim());
-    const previousCity  = parts[1] || "";
-    // const previousState = parts[2]?.split(" ")[0] || "";
+    const previousCity = parts[1] || "";
     const rawState = parts[2]?.split(" ")[0] ?? "";
     const previousOwnerState = getStateAbbrFromFullNameOrAbbr(rawState);
     console.log("Parsed state:", previousOwnerState, "from raw:", rawState);
@@ -127,25 +79,24 @@ export default function ResponsiveFormPage() {
       ...idCheckboxes,
       // car title information
       vehicleIdentificationNumber: titleOcr?.vehicle_identification_number ?? "",
-      vehicleYear:                 titleOcr?.year_model?.toString()           ?? "",
-      vehicleMake:                 titleOcr?.make_of_vehicle                   ?? "",
-      vehicleBodyStyle:            titleOcr?.body_style                       ?? "",
-      vehicleModel:                titleOcr?.model                            ?? "",
-      emptyWeight:                 titleOcr?.mfg_capacity_in_tons?.toString() ?? "",
+      vehicleYear: titleOcr?.year_model?.toString() ?? "",
+      vehicleMake: titleOcr?.make_of_vehicle ?? "",
+      vehicleBodyStyle: titleOcr?.body_style ?? "",
+      vehicleModel: titleOcr?.model ?? "",
+      emptyWeight: titleOcr?.mfg_capacity_in_tons?.toString() ?? "",
       // previous owner
-      previousOwner:               titleOcr?.owner_name                   ?? "",
+      previousOwner: titleOcr?.owner_name ?? "",
       previousCity,
       previousOwnerState,
       // driver license information
-      photoIdNumber:               dl?.dlNumber ?? "",
-      applicantName:               dl?.first_name ?? "",
-      applicantLastName:           dl?.last_name ?? "",
-      applicantMailingAddress:     dl?.street_address ?? dl?.address ?? "",
-      applicantCity:               dl?.city ?? "",
-      applicantState:              dl?.state ?? "",
-      applicantZip:                dl?.zip_code ?? "",
+      photoIdNumber: dl?.dlNumber ?? "",
+      applicantName: dl?.first_name ?? "",
+      applicantLastName: dl?.last_name ?? "",
+      applicantMailingAddress: dl?.street_address ?? dl?.address ?? "",
+      applicantCity: dl?.city ?? "",
+      applicantState: dl?.state ?? "",
+      applicantZip: dl?.zip_code ?? "",
     };
-
 
     // 4) merge: defaults → autoFill → idMap
     return {
@@ -160,14 +111,17 @@ export default function ResponsiveFormPage() {
     }
   }, [state, navigate]);
 
-  // init formState once with default values
+  // initialize form state with OCR data
   // const [formState, setFormState] = useState(() =>
   //   mapOcrToFormValues(dlOcr ?? {}, titleOcr ?? {}, selectedIdType)
   // );
+  // init formState once with default values
+  const [formState, setFormState] = useState(() =>
+    mapOcrToFormValues(dlOcr ?? {}, titleOcr ?? {}, selectedIdType)
+  );
 
   console.log("selectedIdType from session:", selectedIdType);
   console.log("generated formState:", formState);
-
 
   const handleFormChange = (newState: Record<string, any>, isValid: boolean, errors: Record<string, string>) => {
     setFormState(newState);
@@ -179,7 +133,7 @@ export default function ResponsiveFormPage() {
   const handleNext = () => {
     if (!formValid) {
       setShowAllErrors(true);
-      
+
       // Find first error and scroll to it
       const firstErrorField = Object.keys(validationErrors)[0];
       if (firstErrorField) {
@@ -197,28 +151,40 @@ export default function ResponsiveFormPage() {
       return;
     }
     navigate("/signature", {
-      state: { 
+      state: {
         applicationId,
-        dlOcr, 
+        dlOcr,
         titleOcr,
-        titleFile, 
+        titleFile,
         titleForm: formState,
         signatures: {
           SellerSignature: formState.SellerSignature,
           OwnerSignature: formState.OwnerSignature,
-          AdditionalSignature: formState.AdditionalSignature
-        }
+          AdditionalSignature: formState.AdditionalSignature,
+        },
       },
     });
+  };
+
+  const handleSave = () => {
+    try {
+      sessionStorage.setItem("savedFormState", JSON.stringify(formState));
+      if (applicationId) {
+        sessionStorage.setItem("savedApplicationId", applicationId);
+      }
+      console.log("Form data saved successfully:", formState);
+    } catch (error) {
+      console.error("Error saving form data:", error);
+    }
   };
 
   return (
     <div className="responsive-form-page">
       <h1 className="page-title">Step 3: Complete Title Form</h1>
-      
+
       {showAllErrors && Object.keys(validationErrors).length > 0 && (
         <div className="error-banner">
-          <span className="error-count">{Object.keys(validationErrors).length} error(s)</span> 
+          <span className="error-count">{Object.keys(validationErrors).length} error(s)</span>
           found in the form. Please fix them to continue.
         </div>
       )}
@@ -240,10 +206,11 @@ export default function ResponsiveFormPage() {
           ← Back
         </button>
 
-        <button 
-          className="btn-next" 
-          onClick={handleNext}
-        >
+        <button className="btn-save" onClick={handleSave}>
+          Save
+        </button>
+
+        <button className="btn-next" onClick={handleNext}>
           Next: Review &amp; Submit →
         </button>
       </div>

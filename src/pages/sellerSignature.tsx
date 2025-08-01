@@ -95,7 +95,6 @@ const SignatureCanvas = forwardRef<any, any>((props, ref) => {
   );
 });
 
-// Simple Calendar Component
 const CalendarPicker = ({ onSelect, onClose }: { onSelect: (date: string) => void; onClose: () => void }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
@@ -103,11 +102,8 @@ const CalendarPicker = ({ onSelect, onClose }: { onSelect: (date: string) => voi
 
   const handleSelectDate = (day: number) => {
     const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    const formattedDate = selectedDate.toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: 'numeric'
-    });
+    // Format as MM-DD-YYYY
+    const formattedDate = `${(selectedDate.getMonth() + 1).toString().padStart(2, '0')}-${selectedDate.getDate().toString().padStart(2, '0')}-${selectedDate.getFullYear()}`;
     onSelect(formattedDate);
     onClose();
   };
@@ -223,7 +219,6 @@ export default function SellerSignPage() {
     const arrayBuffer = await fetchPdfProxy(token!);
     const pdfDoc = await PDFDocument.load(arrayBuffer);
     
-    // Embed signature image
     const pngImage = await pdfDoc.embedPng(dataUrl);
     const page = pdfDoc.getPages()[0];
     page.drawImage(pngImage, {
@@ -233,10 +228,8 @@ export default function SellerSignPage() {
       height: 15,
     });
 
-    // Get the form and embed text fields
     const form = pdfDoc.getForm();
     
-    // Embed sellerName
     try {
       const sellerNameField = form.getTextField('sellerName');
       sellerNameField.setText(signatureName);
@@ -250,7 +243,6 @@ export default function SellerSignPage() {
       });
     }
 
-    // Embed sellerDate
     try {
       const sellerDateField = form.getTextField('sellerDate');
       sellerDateField.setText(signatureDate);
@@ -534,7 +526,7 @@ export default function SellerSignPage() {
             fontWeight: 600,
             borderBottom: '1px solid rgba(255,255,255,0.1)'
           }}>
-            Seller’s Signature
+            Seller's Signature
           </h2>
 
           <div style={{ marginBottom: 24 }}>
@@ -580,7 +572,7 @@ export default function SellerSignPage() {
               value={signatureDate}
               onChange={e => setSignatureDate(e.target.value)}
               onClick={() => setShowCalendar(true)}
-              placeholder="MM/DD/YYYY"
+              placeholder="MM-DD-YYYY"
               style={{
                 width: '100%',
                 padding: '14px 16px',
