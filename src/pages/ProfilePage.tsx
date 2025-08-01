@@ -84,7 +84,7 @@ export default function ProfilePage() {
         navigate("/signature", {state : {applicationId}});
         break;
       case "signed":
-        navigate("/preview", { state: { applicationId } });
+        navigate("/email-sent", { state: { applicationId } });
         break;
       case "pending_signature":
         navigate("/email-sent", { state: { applicationId } });

@@ -1,5 +1,5 @@
 import  { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import Responsive130UForm from "../components/Responsive130UForm";
 import { fields } from "../components/Responsive130UForm";
 import { STATE_NAMES } from "../utils/stateAbbreviations";
@@ -29,18 +29,67 @@ function getStateAbbrFromFullNameOrAbbr(input: string): string {
 export default function ResponsiveFormPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { applicationId: paramAppId } = useParams<{ applicationId: string }>();
   const state = (location.state ?? {}) as LocationState;
+  const appId = state.applicationId || paramAppId;
   const { ocr: dlOcr, titleOcr, titleFile, applicationId } = state;
   const [selectedIdType] = useState(() => {
     return sessionStorage.getItem("selectedIdType") || "";
   });
 
-  
+  // 3) 增加加载状态、后端数据存放
+  const [loading, setLoading] = useState(true);
+  const [backendData, setBackendData] = useState<{
+    dlOcr?: any;
+    titleOcr?: any;
+    selectedIdType?: string;
+  }>({});
+
+  // 4) 如果本地没有 OCR，向后端请求
+  useEffect(() => {
+    if ((!dlOcr || !titleOcr) && appId) {
+      fetch(`/api/applications/${appId}`)
+        .then(res => {
+          if (!res.ok) throw new Error("fetch failed");
+          return res.json();
+        })
+        .then(data => {
+          setBackendData({
+            dlOcr: data.dlOcr,
+            titleOcr: data.titleOcr,
+            selectedIdType: data.selectedIdType,
+          });
+        })
+        .catch(err => {
+          console.error("加载申请数据失败", err);
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, [dlOcr, titleOcr, appId]);
+
+  // 5) 根据优先级决定传给 mapOcrToFormValues 的参数
+  const effectiveDlOcr    = dlOcr    ?? backendData.dlOcr;
+  const effectiveTitleOcr = titleOcr ?? backendData.titleOcr;
+  const effectiveIdType   = selectedIdType || backendData.selectedIdType || "";
+
+  // 6) 只有加载完毕才渲染表单
+  const [formState, setFormState] = useState(() =>
+    mapOcrToFormValues(effectiveDlOcr, effectiveTitleOcr, effectiveIdType)
+  );
+  useEffect(() => {
+    if (!loading) {
+      setFormState(mapOcrToFormValues(effectiveDlOcr, effectiveTitleOcr, effectiveIdType));
+    }
+  }, [loading, effectiveDlOcr, effectiveTitleOcr, effectiveIdType]);
+
+
   const [formValid, setFormValid] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showAllErrors, setShowAllErrors] = useState(false);
 
-    function mapOcrToFormValues(dl: any, titleOcr: any, idType: string): Record<string, any> {
+  function mapOcrToFormValues(dl: any, titleOcr: any, idType: string): Record<string, any> {
     // 1) define defaults for the form fields
     const defaults: Record<string, string | boolean> = Object.fromEntries(
       fields.map(f => [f.id, f.type === "checkbox" ? false : ""])
@@ -111,14 +160,10 @@ export default function ResponsiveFormPage() {
     }
   }, [state, navigate]);
 
-  // initialize form state with OCR data
+  // init formState once with default values
   // const [formState, setFormState] = useState(() =>
   //   mapOcrToFormValues(dlOcr ?? {}, titleOcr ?? {}, selectedIdType)
   // );
-  // init formState once with default values
-  const [formState, setFormState] = useState(() =>
-    mapOcrToFormValues(dlOcr ?? {}, titleOcr ?? {}, selectedIdType)
-  );
 
   console.log("selectedIdType from session:", selectedIdType);
   console.log("generated formState:", formState);
