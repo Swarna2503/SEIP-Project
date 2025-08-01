@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/auth";
 import {
   createApplication,
@@ -12,30 +12,44 @@ import "../styles/profile.css";
 export default function ProfilePage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-
+  const location = useLocation();
   const [drafts, setDrafts] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user?.user_id) return;
-
+    
     async function fetchData() {
-      if (!user || !user.user_id) return;
+      if (!user || !user.user_id) {
+        console.log("User not found or user_id missing:", user);
+        return;
+      }
+
+      console.log("Fetching data for user_id:", user.user_id);
 
       const draftRes = await getDraftApplications(user.user_id);
+      console.log("Draft response:", draftRes);
+
       if (draftRes.ok && Array.isArray(draftRes.data)) {
+        console.log("Setting drafts:", draftRes.data);
         setDrafts(draftRes.data);
+      } else {
+        console.warn("Drafts fetch failed or data not an array");
       }
 
       const historyRes = await getApplicationHistory(user.user_id);
+      console.log("History response:", historyRes);
+
       if (historyRes.ok && Array.isArray(historyRes.data)) {
+        console.log("Setting history:", historyRes.data);
         setHistory(historyRes.data);
+      } else {
+        console.warn("History fetch failed or data not an array");
       }
 
       setLoading(false);
     }
-
     fetchData();
   }, [user]);
 
@@ -51,9 +65,38 @@ export default function ProfilePage() {
     }
   };
 
-  const handleContinue = (applicationId: string) => {
-    navigate("/ocr", { state: { applicationId } });
+  const handleContinue = (app: any) => {
+    const applicationId = app.application_id;
+
+    switch (app.status) {
+      case "draft":
+        navigate("/ocr", { state: { applicationId } });
+        break;
+      case "driver_uploaded":
+        navigate("/upload-title", { state: { applicationId } });
+        break;
+      case "title_uploaded":
+        navigate("/responsive-form", { state: { applicationId } });
+        break;
+      case "form_completed":
+        navigate("/signature", {state : {applicationId}});
+        break;
+      case "signed":
+        navigate("/preview", { state: { applicationId } });
+        break;
+      case "pending_signature":
+        navigate("/email-sent", { state: { applicationId } });
+        break;
+      case "application_complete":
+        alert("This application has already been completed.");
+        break;
+      default:
+        console.warn("Unrecognized status:", app.status);
+        break;
+    }
   };
+
+
 
   const handleNew = async () => {
     if (!user?.user_id) return;
@@ -119,9 +162,14 @@ export default function ProfilePage() {
                 <div key={idx} className="draft-card">
                   <div className="draft-header">
                     <h3>Application #{app.application_display_id}</h3>
+                    <div className="application-status-tag">
+                      {app.status === "pending_signature" && <span className="tag pending">Pending Signature</span>}
+                      {app.status === "draft" && <span className="tag draft">Draft</span>}
+                    </div>
+
                     <div className="draft-actions">
                       <button 
-                        onClick={() => handleContinue(app.application_id)}
+                        onClick={() => handleContinue(app)}
                         className="action-button continue"
                       >
                         Continue
@@ -149,6 +197,14 @@ export default function ProfilePage() {
                     <div className="detail-item">
                       <span>Applicant:</span>
                       <span>{app.full_name || "N/A"}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span>DL Number:</span>
+                      <span>{app.dl_number || "N/A"}</span>
+                    </div>
+                    <div className="detail-item">
+                      <span>VIN:</span>
+                      <span>{app.vin_number || "N/A"}</span>
                     </div>
                   </div>
                   
