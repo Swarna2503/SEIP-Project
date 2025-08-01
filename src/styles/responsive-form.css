@@ -11,6 +11,8 @@
   --radius: 8px;
   --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --transition: all 0.3s ease;
+  --section-header-color: #334155;
+
 }
 
 * {
@@ -107,24 +109,62 @@ body {
   margin-bottom: 1.5rem;
   padding-bottom: 0.75rem;
   border-bottom: 2px solid var(--border);
+  color: #334155;
 }
 
 .section-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--primary-dark);
+  /* Text styling */
+  color: #334155; /* Dark gray-blue for good readability */
+  font-size: 1.25rem; /* 20px equivalent */
+  font-weight: 600; /* Semi-bold */
+  line-height: 1.5;
+  
+  /* Layout */
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  margin: 0;
+  padding: 0.75rem 0; /* 12px vertical padding */
+  
+  /* Interaction */
+  cursor: pointer; /* Show pointer for collapsible sections */
+  transition: color 0.2s ease;
 }
 
-.section-title::before {
-  content: '';
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  background: var(--primary);
-  border-radius: 50%;
+/* For non-collapsible sections */
+.section-title:not([style*="cursor: pointer"]) {
+  cursor: default;
+}
+
+/* Required field asterisk */
+.section-title .text-red-500 {
+  color: #ef4444; /* Red-500 equivalent */
+  margin-left: 0.25rem;
+}
+
+/* Toggle icon */
+.section-title .toggle-icon {
+  margin-left: 0.5rem;
+  font-size: 0.9em;
+  color: #64748b; /* slate-500 */
+  transition: transform 0.2s ease;
+}
+
+/* Hover effects */
+.section-title:hover {
+  color: #1e293b; /* Darker on hover */
+}
+
+.section-title:hover .toggle-icon {
+  color: #475569; /* Darker icon on hover */
+}
+
+/* Animation for toggle icon */
+.section-title .toggle-icon {
+  transition: transform 0.2s ease;
+}
+
+.section-title .toggle-icon.rotated {
+  transform: rotate(90deg);
 }
 
 .fields-grid {
