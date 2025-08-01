@@ -37,9 +37,10 @@ export async function requestSignature(
 //     { method: "GET" }
 //   );
 // }
-export async function getPdfUrl(applicationId: string): Promise<{ data: { pdfUrl: string } }> {
+export async function getPdfUrl(applicationId: string, signed = false): Promise<{ data: { pdfUrl: string } }> {
+  const suffix = signed ? "?signed=true" : "";
   return fetchWrapper(
-    `/applications/${applicationId}/pdf-url`,
+    `/applications/${applicationId}/pdf-url${suffix}`,
     { method: "GET" }
   );
 }

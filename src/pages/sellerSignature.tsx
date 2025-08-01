@@ -300,8 +300,11 @@ export default function SellerSignPage() {
       if (!res.ok) {
         throw new Error(`Submit failed: ${res.status}`);
       }
-
+      const { signedUrl } = res.data as { signedUrl?: string };
       alert('✅ Document signed successfully!');
+      if (signedUrl) {
+        window.open(signedUrl, '_blank');
+      }
       navigate('/', { replace: true });
     } catch (err: any) {
       console.error('[SellerSignPage] submit error', err);

@@ -8,6 +8,7 @@ import {
   deleteApplication,
 } from "../apis/application";
 import "../styles/profile.css";
+import { getPdfUrl } from "../apis/document";
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
@@ -20,30 +21,30 @@ export default function ProfilePage() {
   const [selectedApplication, setSelectedApplication] = useState<any>(null);
 
   // Mock data for testing - remove when backend provides real data
-  const mockHistoryData = [
-    {
-      application_id: "app1",
-      application_display_id: "1001",
-      status: "Completed",
-      created_at: "2023-06-15T10:30:00Z",
-      updated_at: "2023-06-15T11:45:00Z",
-      pdf_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", // Public test PDF
-      full_name: "John Doe",
-      driver_license_id: "dl123",
-      title_doc_id: "td456"
-    },
-    {
-      application_id: "app2",
-      application_display_id: "1002",
-      status: "Processing",
-      created_at: "2023-06-10T09:15:00Z",
-      updated_at: "2023-06-10T09:15:00Z",
-      pdf_url: null,
-      full_name: "Jane Smith",
-      driver_license_id: "dl789",
-      title_doc_id: null
-    }
-  ];
+  // const mockHistoryData = [
+  //   {
+  //     application_id: "app1",
+  //     application_display_id: "1001",
+  //     status: "Completed",
+  //     created_at: "2023-06-15T10:30:00Z",
+  //     updated_at: "2023-06-15T11:45:00Z",
+  //     pdf_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf", // Public test PDF
+  //     full_name: "John Doe",
+  //     driver_license_id: "dl123",
+  //     title_doc_id: "td456"
+  //   },
+  //   {
+  //     application_id: "app2",
+  //     application_display_id: "1002",
+  //     status: "Processing",
+  //     created_at: "2023-06-10T09:15:00Z",
+  //     updated_at: "2023-06-10T09:15:00Z",
+  //     pdf_url: null,
+  //     full_name: "Jane Smith",
+  //     driver_license_id: "dl789",
+  //     title_doc_id: null
+  //   }
+  // ];
 
   useEffect(() => {
     if (!user?.user_id) return;
@@ -71,10 +72,23 @@ export default function ProfilePage() {
 
       if (historyRes.ok && Array.isArray(historyRes.data)) {
         // For now, combine mock data with real data
-        setHistory([...historyRes.data, ...mockHistoryData]);
+        const enhanced = await Promise.all(
+          historyRes.data.map(async (app) => {
+            if (app.status === "application_complete") {
+              try {
+                const { data } = await getPdfUrl(app.application_id, true);
+                return { ...app, pdf_url: data.pdfUrl };
+              } catch (e) {
+                console.warn(`Fetch PDF URL failed for ${app.application_id}`, e);
+                return { ...app, pdf_url: null };
+              }
+            }
+            return app;
+           })
+        );
+          setHistory(enhanced);
       } else {
-        // If API fails, use mock data
-        setHistory(mockHistoryData);
+        setHistory([]);
       }
 
       setLoading(false);
@@ -317,7 +331,7 @@ export default function ProfilePage() {
                     >
                       View Details
                     </button>
-                    {h.status === 'Completed' && (
+                    {h.status === 'application_complete' && (
                       <a
                         href={h.pdf_url || '#'}
                         className={`download-button ${!h.pdf_url ? 'disabled' : ''}`}
