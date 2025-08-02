@@ -113,21 +113,21 @@ export default function EmailSentPage() {
               margin: '20px 0'
             }}>
               <p style={{ margin: 0, color: '#1e40af' }}>
-                <strong>Seller Link:</strong>{' '}
+                {/* <strong>Seller Link:</strong>{' '}
                 <a 
                   href={`${import.meta.env.VITE_FRONTEND_URL}/seller-sign/${applicationId}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
                 >
                   {import.meta.env.VITE_FRONTEND_URL}/seller-sign/{applicationId}
-                </a>
-                {/* <a 
+                </a> */}
+                <a 
                   href={`${import.meta.env.VITE_API_BASE_URL}/seller-sign/${applicationId}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
                 >
                   {import.meta.env.VITE_API_BASE_URL}/seller-sign/{applicationId}
-                </a> */}
+                </a>
               </p>
             </div>
           </div>

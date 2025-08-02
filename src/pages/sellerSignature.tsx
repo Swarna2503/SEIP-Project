@@ -168,7 +168,7 @@ export default function SellerSignPage() {
   const [error, setError] = useState<string | null>(null);
   const [signatureName, setSignatureName] = useState('');
   const [signatureDate, setSignatureDate] = useState('');
-  const [pdfData, setPdfData] = useState('');
+  const [ , setPdfData] = useState('');
   const [pdfSrc, setPdfSrc] = useState<string | null>(null);
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer|null>(null);
   const [showCalendar, setShowCalendar] = useState(false);

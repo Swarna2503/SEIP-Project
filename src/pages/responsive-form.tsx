@@ -1,8 +1,9 @@
 import  { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import Responsive130UForm from "../components/Responsive130UForm";
 import { fields } from "../components/Responsive130UForm";
 import { STATE_NAMES } from "../utils/stateAbbreviations";
+import { getFormState, saveFormState } from "../apis/form";
 import "../styles/responsive-form.css";
 
 interface LocationState {
@@ -30,14 +31,18 @@ export default function ResponsiveFormPage() {
   const location = useLocation();
   // const state = location.state as LocationState | undefined;
   // const { ocr: dlOcr, titleOcr, titleFile } = state ?? {};
+  const { appId: paramAppId } = useParams<{ appId: string }>();
+  // use the location.state data application ID
   const state = (location.state ?? {}) as LocationState;
-  const appId = state.applicationId || paramAppId;
-  const { ocr: dlOcr, titleOcr, titleFile, applicationId } = state;
+  const applicationId = state.applicationId || paramAppId;
+  const { ocr: dlOcr, titleOcr, titleFile } = state;
   const [selectedIdType] = useState(() => {
     return sessionStorage.getItem("selectedIdType") || "";
   });
 
-  
+  const [formState, setFormState] = useState<Record<string, any> | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [formValid, setFormValid] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showAllErrors, setShowAllErrors] = useState(false);
@@ -106,19 +111,68 @@ export default function ResponsiveFormPage() {
   }
 
   useEffect(() => {
+    // 1. 如果没有 state，跳回首页
     if (!state) {
       navigate("/", { replace: true });
+      return;
     }
-  }, [state, navigate]);
+
+    const storageKey = `savedFormState_${applicationId}`;
+
+    // 2. 本地有缓存就直接用
+    const saved = sessionStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        setFormState(JSON.parse(saved));
+      } catch (e) {
+        console.error("Parse saved form error:", e);
+        // parse 失败，退回到后端拉取
+        fetchFromServer();
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      // 3. 本地没有，再去后端拉
+      fetchFromServer();
+    }
+
+    // 抽出来的后端拉取函数
+    async function fetchFromServer() {
+      if (!applicationId) {
+        console.error("Missing applicationId—won't fetch");
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const { ok, data } = await getFormState(applicationId);
+        if (ok && Object.keys(data).length > 0) {
+          // 后端有，覆盖
+          setFormState(data);
+        } else {
+          // 后端没有，保留 OCR 自动填充的初始值
+          setFormState(
+            mapOcrToFormValues(dlOcr ?? {}, titleOcr ?? {}, selectedIdType)
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching from server:", error);
+        setFormState(
+          mapOcrToFormValues(dlOcr ?? {}, titleOcr ?? {}, selectedIdType)
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  }, [applicationId, dlOcr, titleOcr, selectedIdType, navigate]);
 
   // initialize form state with OCR data
   // const [formState, setFormState] = useState(() =>
   //   mapOcrToFormValues(dlOcr ?? {}, titleOcr ?? {}, selectedIdType)
   // );
   // init formState once with default values
-  const [formState, setFormState] = useState(() =>
-    mapOcrToFormValues(dlOcr ?? {}, titleOcr ?? {}, selectedIdType)
-  );
+  // const [formState, setFormState] = useState(() =>
+  //   mapOcrToFormValues(dlOcr ?? {}, titleOcr ?? {}, selectedIdType)
+  // );
 
   console.log("selectedIdType from session:", selectedIdType);
   console.log("generated formState:", formState);
@@ -131,6 +185,11 @@ export default function ResponsiveFormPage() {
   };
 
   const handleNext = () => {
+     // early-exit if formState isn’t ready
+    if (!formState) {
+      console.error("formState not initialized");
+      return;
+    }
     if (!formValid) {
       setShowAllErrors(true);
 
@@ -166,17 +225,44 @@ export default function ResponsiveFormPage() {
     });
   };
 
-  const handleSave = () => {
+  // const handleSave = () => {
+  //   try {
+  //     sessionStorage.setItem("savedFormState", JSON.stringify(formState));
+  //     if (applicationId) {
+  //       sessionStorage.setItem("savedApplicationId", applicationId);
+  //     }
+  //     console.log("Form data saved successfully:", formState);
+  //   } catch (error) {
+  //     console.error("Error saving form data:", error);
+  //   }
+  // };
+  const handleSave = async () => {
+    if (!applicationId || !formState) {
+      console.error("Missing applicationId or formState");
+      return;
+    }
+    const storageKey = `savedFormState_${applicationId}`;
+
     try {
-      sessionStorage.setItem("savedFormState", JSON.stringify(formState));
-      if (applicationId) {
-        sessionStorage.setItem("savedApplicationId", applicationId);
+      // 1. 本地缓存
+      sessionStorage.setItem(storageKey, JSON.stringify(formState));
+
+      // 2. 同步到后端
+      const { ok, status, data } = await saveFormState(applicationId, formState);
+
+      if (!ok) {
+        console.error(`Server save failed: ${status}`);
+      } else {
+        console.log("Saved locally and to server", data);
       }
-      console.log("Form data saved successfully:", formState);
     } catch (error) {
       console.error("Error saving form data:", error);
     }
   };
+
+  if (isLoading || !formState) {
+    return <div className="loading-indicator">Loading...</div>;
+  }
 
   return (
     <div className="responsive-form-page">
