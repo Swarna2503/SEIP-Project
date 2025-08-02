@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { STATE_ABBREVIATIONS, STATE_NAMES } from '../utils/stateAbbreviations';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css'; 
 
 interface FieldDef {
   id: string;
@@ -31,18 +33,16 @@ const getToday = () => {
   return `${mm}-${dd}-${yyyy}`; // Keep as MM-DD-YYYY for storage
 };
 
-// Converts MM-DD-YYYY → YYYY-MM-DD (for browser date input)
 const formatForDateInput = (dateStr: string) => {
   if (!dateStr) return "";
   const [month, day, year] = dateStr.split("-");
   return `${year}-${month}-${day}`;
 };
 
-// Converts YYYY-MM-DD → MM-DD-YYYY (for storage)
 const parseDateInput = (dateStr: string) => {
   if (!dateStr) return "";
   const [year, month, day] = dateStr.split("-");
-  return `${month.padStart(2, "0")}-${day.padStart(2, "0")}-${year}`; // Ensure 2-digit months/days
+  return `${month.padStart(2, "0")}-${day.padStart(2, "0")}-${year}`;
 };
 
 
@@ -109,7 +109,7 @@ const validators = {
     const [month, day, year] = value.split('-').map(Number);
     const date = new Date(year, month - 1, day);
     const today = new Date();
-    today.setHours(23, 59, 59, 999); // Set to end of today
+    today.setHours(23, 59, 59, 999);
     if (date > today) {
       return "Date cannot be in the future";
     }
@@ -917,14 +917,20 @@ export default function Responsive130UForm({
             {f.label}
             {showAsterisk && <span className="text-red-500">*</span>}
           </label>
-          <input
+          <DatePicker
             id={f.id}
-            type="date" // Enables native picker
-            value={formatForDateInput(formState[f.id])} // Convert MM-DD-YYYY → YYYY-MM-DD (for browser)
-            onChange={(e) => {
-              const formattedDate = parseDateInput(e.target.value); // Convert YYYY-MM-DD → MM-DD-YYYY (for storage)
-              handleChange(f.id, formattedDate);
+            selected={formState[f.id] ? new Date(formState[f.id].split('-')) : null}
+            onChange={(date: Date | null, event) => {
+              if (date) {
+                const mm = String(date.getMonth() + 1).padStart(2, '0');
+                const dd = String(date.getDate()).padStart(2, '0');
+                const yyyy = date.getFullYear();
+                handleChange(f.id, `${mm}-${dd}-${yyyy}`);
+              } else {
+                handleChange(f.id, ''); // Handle null/clear case
+              }
             }}
+            dateFormat="MM-dd-yyyy"
             className={`form-input ${showError ? 'input-error' : ''}`}
           />
           {showError && <div className="error-message">{err}</div>}
