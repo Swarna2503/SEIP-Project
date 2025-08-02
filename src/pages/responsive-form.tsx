@@ -184,7 +184,7 @@ export default function ResponsiveFormPage() {
     setShowAllErrors(false);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
      // early-exit if formState isn’t ready
     if (!formState) {
       console.error("formState not initialized");
@@ -209,6 +209,13 @@ export default function ResponsiveFormPage() {
       console.error("Missing applicationId in ResponsiveFormPage");
       return;
     }
+
+      try {
+        await handleSave(); // ✅ 新增这行：保存表单
+      } catch (err) {
+        console.error("Failed to save form before navigation:", err);
+        return;
+      }
     navigate("/signature", {
       state: {
         applicationId,
