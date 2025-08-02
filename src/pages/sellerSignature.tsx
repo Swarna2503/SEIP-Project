@@ -102,7 +102,6 @@ const CalendarPicker = ({ onSelect, onClose }: { onSelect: (date: string) => voi
 
   const handleSelectDate = (day: number) => {
     const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    // Format as MM-DD-YYYY
     const formattedDate = `${(selectedDate.getMonth() + 1).toString().padStart(2, '0')}-${selectedDate.getDate().toString().padStart(2, '0')}-${selectedDate.getFullYear()}`;
     onSelect(formattedDate);
     onClose();
@@ -120,7 +119,7 @@ const CalendarPicker = ({ onSelect, onClose }: { onSelect: (date: string) => voi
     <div style={{
       position: 'absolute',
       background: '#334155',
-      padding: 16,
+      padding: 2,
       borderRadius: 8,
       boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
       zIndex: 1000,
@@ -172,6 +171,11 @@ export default function SellerSignPage() {
   const [pdfSrc, setPdfSrc] = useState<string | null>(null);
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer|null>(null);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [errors, setErrors] = useState({
+    signatureName: '',
+    signatureDate: '',
+    signature: ''
+  });
 
   const loadPdf = async () => {
     try {
@@ -262,18 +266,42 @@ export default function SellerSignPage() {
   };
 
   const handleSignDocument = async () => {
+    setErrors({
+      signatureName: '',
+      signatureDate: '',
+      signature: ''
+    });
+
+    let isValid = true;
+    const newErrors = {
+      signatureName: '',
+      signatureDate: '',
+      signature: ''
+    };
+
     if (!signatureName.trim()) {
-      setError('Please enter your name');
-      return;
+      newErrors.signatureName = 'Please enter your name';
+      isValid = false;
     }
-    if (!sellerRef.current || sellerRef.current.isEmpty()) {
-      setError('Please provide your signature');
-      return;
-    }
+
     if (!signatureDate) {
-      setError('Please select a valid date');
+      newErrors.signatureDate = 'Please select a valid date';
+      isValid = false;
+    } else if (!/^\d{2}-\d{2}-\d{4}$/.test(signatureDate)) {
+      newErrors.signatureDate = 'Please use MM-DD-YYYY format';
+      isValid = false;
+    }
+
+    if (!sellerRef.current || sellerRef.current.isEmpty()) {
+      newErrors.signature = 'Please provide your signature';
+      isValid = false;
+    }
+
+    if (!isValid) {
+      setErrors(newErrors);
       return;
     }
+
     setIsSubmitting(true);
     setError(null);
 
@@ -540,18 +568,28 @@ export default function SellerSignPage() {
               color: '#e2e8f0',
               fontSize: '1.05rem'
             }}>
-              Your Full Name
+              Your Full Name <span style={{ color: '#f87171' }}>*</span>
+              {errors.signatureName && (
+                <span style={{ color: '#f87171', fontSize: '0.9rem', marginLeft: 8 }}>
+                  {errors.signatureName}
+                </span>
+              )}
             </label>
             <input
               type="text"
               value={signatureName}
-              onChange={e => setSignatureName(e.target.value)}
+              onChange={e => {
+                setSignatureName(e.target.value);
+                if (errors.signatureName) {
+                  setErrors(prev => ({ ...prev, signatureName: '' }));
+                }
+              }}
               placeholder="Enter your name as it appears on the document"
               style={{
                 width: '100%',
                 padding: '14px 16px',
                 borderRadius: 8,
-                border: '1px solid rgba(255,255,255,0.1)',
+                border: `1px solid ${errors.signatureName ? '#f87171' : 'rgba(255,255,255,0.1)'}`,
                 fontSize: '1rem',
                 backgroundColor: 'rgba(15,23,42,0.5)',
                 color: '#f8fafc',
@@ -568,19 +606,29 @@ export default function SellerSignPage() {
               color: '#e2e8f0',
               fontSize: '1.05rem'
             }}>
-              Signature Date
+              Signature Date <span style={{ color: '#f87171' }}>*</span>
+              {errors.signatureDate && (
+                <span style={{ color: '#f87171', fontSize: '0.9rem', marginLeft: 8 }}>
+                  {errors.signatureDate}
+                </span>
+              )}
             </label>
             <input
               type="text"
               value={signatureDate}
-              onChange={e => setSignatureDate(e.target.value)}
+              onChange={e => {
+                setSignatureDate(e.target.value);
+                if (errors.signatureDate) {
+                  setErrors(prev => ({ ...prev, signatureDate: '' }));
+                }
+              }}
               onClick={() => setShowCalendar(true)}
               placeholder="MM-DD-YYYY"
               style={{
                 width: '100%',
                 padding: '14px 16px',
                 borderRadius: 8,
-                border: '1px solid rgba(255,255,255,0.1)',
+                border: `1px solid ${errors.signatureDate ? '#f87171' : 'rgba(255,255,255,0.1)'}`,
                 backgroundColor: 'rgba(15,23,42,0.5)',
                 color: '#f8fafc',
                 cursor: 'pointer'
@@ -591,6 +639,9 @@ export default function SellerSignPage() {
                 onSelect={date => {
                   setSignatureDate(date);
                   setShowCalendar(false);
+                  if (errors.signatureDate) {
+                    setErrors(prev => ({ ...prev, signatureDate: '' }));
+                  }
                 }}
                 onClose={() => setShowCalendar(false)}
               />
@@ -605,10 +656,15 @@ export default function SellerSignPage() {
               color: '#e2e8f0',
               fontSize: '1.05rem'
             }}>
-              Your Signature
+              Your Signature <span style={{ color: '#f87171' }}>*</span>
+              {errors.signature && (
+                <span style={{ color: '#f87171', fontSize: '0.9rem', marginLeft: 8 }}>
+                  {errors.signature}
+                </span>
+              )}
             </label>
             <div style={{
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: `1px solid ${errors.signature ? '#f87171' : 'rgba(255,255,255,0.1)'}`,
               borderRadius: 8,
               backgroundColor: 'rgba(15,23,42,0.5)',
               overflow: 'hidden'
@@ -639,6 +695,7 @@ export default function SellerSignPage() {
               onClick={handlePreview}
               style={{
                 marginTop: 12,
+                marginLeft: 12,
                 padding: '10px 20px',
                 background: 'rgba(15,23,42,0.5)',
                 color: '#e2e8f0',
@@ -647,7 +704,7 @@ export default function SellerSignPage() {
                 cursor: 'pointer'
               }}
             >
-              Preview Signature
+              Preview Changes
             </button>
           </div>
 
