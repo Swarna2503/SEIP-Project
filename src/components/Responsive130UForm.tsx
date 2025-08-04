@@ -1,3 +1,4 @@
+import { useMobile } from '../hooks/isMobile';
 import { useState, useEffect, useRef } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { STATE_ABBREVIATIONS, STATE_NAMES } from '../utils/stateAbbreviations';
@@ -24,6 +25,8 @@ export interface Responsive130UFormProps {
   initialValues?: Record<string, string | boolean>;
   showAllErrors?: boolean;
 }
+
+
 // get today's calendar
 const getToday = () => {
   const today = new Date();
@@ -32,18 +35,6 @@ const getToday = () => {
   const yyyy = today.getFullYear();
   return `${mm}-${dd}-${yyyy}`; // Keep as MM-DD-YYYY for storage
 };
-
-// const formatForDateInput = (dateStr: string) => {
-//   if (!dateStr) return "";
-//   const [month, day, year] = dateStr.split("-");
-//   return `${year}-${month}-${day}`;
-// };
-
-// const parseDateInput = (dateStr: string) => {
-//   if (!dateStr) return "";
-//   const [year, month, day] = dateStr.split("-");
-//   return `${month.padStart(2, "0")}-${day.padStart(2, "0")}-${year}`;
-// };
 
 
 const STATE_FIELDS = new Set([
@@ -813,6 +804,7 @@ export default function Responsive130UForm({
   initialValues = {},
   showAllErrors = false
 }: Responsive130UFormProps) {
+  const isMobile = useMobile();
   const [formState, setFormState] = useState<Record<string, any>>(() => {
     const state: Record<string, any> = {};
     fields.forEach(f => {
@@ -907,38 +899,48 @@ export default function Responsive130UForm({
     const err = errors[f.id];
     const showError = (touched[f.id] || showAllErrors) && err;
     const showAsterisk = f.required && f.id !== "individual" && f.id !== "usDriverLicense";
-    // 日期字段优先判断
     const dateFieldIds = ["applicantDate", "additionalApplicantDate", "firstLienDate"];
-    const isDateField = dateFieldIds.includes(f.id);
-    if (isDateField) {
+  
+    // Date fields
+    if (dateFieldIds.includes(f.id)) {
       return (
         <div key={f.id} className="form-field">
           <label htmlFor={f.id} className="form-label">
             {f.label}
             {showAsterisk && <span className="text-red-500">*</span>}
           </label>
-          <DatePicker
-            id={f.id}
-            selected={formState[f.id] ? new Date(formState[f.id].split('-')) : null}
-            onChange={(date: Date | null) => {
-              if (date) {
-                const mm = String(date.getMonth() + 1).padStart(2, '0');
-                const dd = String(date.getDate()).padStart(2, '0');
-                const yyyy = date.getFullYear();
-                handleChange(f.id, `${mm}-${dd}-${yyyy}`);
-              } else {
-                handleChange(f.id, ''); // Handle null/clear case
-              }
-            }}
-            dateFormat="MM-dd-yyyy"
-            className={`form-input ${showError ? 'input-error' : ''}`}
-          />
+          {isMobile ? (
+            <input
+              type="date"
+              id={f.id}
+              value={formState[f.id] || ""}
+              onChange={(e) => handleChange(f.id, e.target.value)}
+              className={`form-input ${showError ? 'input-error' : ''}`}
+            />
+          ) : (
+            <DatePicker
+              id={f.id}
+              selected={formState[f.id] ? new Date(formState[f.id]) : null}
+              onChange={(date: Date | null) => {
+                if (date) {
+                  const mm = String(date.getMonth() + 1).padStart(2, '0');
+                  const dd = String(date.getDate()).padStart(2, '0');
+                  const yyyy = date.getFullYear();
+                  handleChange(f.id, `${mm}-${dd}-${yyyy}`);
+                } else {
+                  handleChange(f.id, '');
+                }
+              }}
+              dateFormat="MM-dd-yyyy"
+              className={`form-input ${showError ? 'input-error' : ''}`}
+            />
+          )}
           {showError && <div className="error-message">{err}</div>}
         </div>
       );
     }
-
-    
+  
+    // Checkbox fields
     if (f.type === "checkbox") {
       return (
         <div key={f.id} className="form-field">
@@ -947,7 +949,7 @@ export default function Responsive130UForm({
               id={f.id}
               type="checkbox"
               checked={Boolean(formState[f.id])}
-              onChange={e => handleChange(f.id, e.target.checked)}
+              onChange={(e) => handleChange(f.id, e.target.checked)}
               className={`form-checkbox ${showError ? 'input-error' : ''}`}
             />
             <span className="checkbox-label">
@@ -959,7 +961,8 @@ export default function Responsive130UForm({
         </div>
       );
     }
-
+  
+    // Signature fields
     if (f.type === "signature") {
       const ref = getSigRef(f.id);
       return (
@@ -973,7 +976,7 @@ export default function Responsive130UForm({
               ref={ref}
               penColor="black"
               canvasProps={{
-                width: 400,
+                width: isMobile ? 300 : 400,
                 height: 100,
                 className: "signature-canvas",
                 style: { border: "1px solid #ccc", borderRadius: "4px" }
@@ -992,7 +995,8 @@ export default function Responsive130UForm({
         </div>
       );
     }
-
+  
+    // Dropdown fields (state fields)
     if (STATE_FIELDS.has(f.id)) {
       return (
         <div key={f.id} className="form-field">
@@ -1003,11 +1007,11 @@ export default function Responsive130UForm({
           <select
             id={f.id}
             value={String(formState[f.id] || "")}
-            onChange={e => handleChange(f.id, e.target.value)}
+            onChange={(e) => handleChange(f.id, e.target.value)}
             className={`form-input ${showError ? 'input-error' : ''}`}
           >
             <option value="">Select State</option>
-            {STATE_ABBREVIATIONS.map(abbr => (
+            {STATE_ABBREVIATIONS.map((abbr) => (
               <option key={abbr} value={abbr}>
                 {STATE_NAMES[abbr]}
               </option>
@@ -1017,7 +1021,8 @@ export default function Responsive130UForm({
         </div>
       );
     }
-
+  
+    // Default text input
     return (
       <div key={f.id} className="form-field">
         <label htmlFor={f.id} className="form-label">
@@ -1028,7 +1033,7 @@ export default function Responsive130UForm({
           id={f.id}
           type="text"
           value={String(formState[f.id] || "")}
-          onChange={e => handleChange(f.id, e.target.value)}
+          onChange={(e) => handleChange(f.id, e.target.value)}
           className={`form-input ${showError ? 'input-error' : ''}`}
         />
         {showError && <div className="error-message">{err}</div>}
