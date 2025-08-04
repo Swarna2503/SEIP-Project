@@ -102,36 +102,10 @@ export default function EmailSentPage() {
               Your document has been successfully sent to the seller for review and signature.
             </p>
             <p style={{ fontSize: '1rem', color: '#374151' }}>
-              The seller can sign it using the link below (valid for 72 hours).
+              The seller will receive an email with a secure link to sign the document.
             </p>
-            <div style={{ 
-              backgroundColor: '#dbeafe',
-              padding: 15,
-              borderRadius: 6,
-              borderLeft: '4px solid #3b82f6',
-              textAlign: 'left',
-              margin: '20px 0'
-            }}>
-              <p style={{ margin: 0, color: '#1e40af' }}>
-                {/* <strong>Seller Link:</strong>{' '}
-                <a 
-                  href={`${import.meta.env.VITE_FRONTEND_URL}/seller-sign/${applicationId}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                >
-                  {import.meta.env.VITE_FRONTEND_URL}/seller-sign/{applicationId}
-                </a> */}
-                <a 
-                  href={`${import.meta.env.VITE_API_BASE_URL}/seller-sign/${applicationId}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                >
-                  {import.meta.env.VITE_API_BASE_URL}/seller-sign/{applicationId}
-                </a>
-              </p>
-            </div>
           </div>
-
+  
           <div style={{ display: 'flex', gap: 15, justifyContent: 'center' }}>
             <button 
               onClick={() => navigate('/')}
@@ -156,7 +130,6 @@ export default function EmailSentPage() {
       </div>
     );
   }
-
   return (
     <div style={{ 
       padding: 24, 

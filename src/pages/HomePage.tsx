@@ -153,7 +153,7 @@ export default function HomePage() {
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                <span className="status-badge pending">Pending</span>
+                <span className="status-badge-pending">Pending</span>
                 {existingAppId ? (
                   <div className="button-group">
                     <button onClick={continueDraft} className="btn primary">

@@ -279,10 +279,12 @@
   letter-spacing: 0.05rem;
 }
 
-.status-badge.pending {
+.status-badge-pending {
   background: linear-gradient(135deg, #fef3c7, #fde68a);
   color: #92400e;
   border: 1px solid #f3e8a4;
+  border-radius: 8px;
+  padding: 8px 16px;
   margin-top: 0;
 }
 
