@@ -211,7 +211,7 @@ export default function ResponsiveFormPage() {
     }
 
       try {
-        await handleSave(); // ✅ 新增这行：保存表单
+        await handleSave(); 
       } catch (err) {
         console.error("Failed to save form before navigation:", err);
         return;
