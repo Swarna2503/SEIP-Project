@@ -12,12 +12,16 @@
   "dependencies": {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     "@types/react-datepicker": "^7.0.0",
 >>>>>>> b3bccc5 (working solution)
 =======
     "@types/react-datepicker": "^7.0.0",
 >>>>>>> 5cd5f7b (fix bugs)
+=======
+    "@types/react-datepicker": "^7.0.0",
+>>>>>>> bf6e36ee406d2ce8dac0bc8087fc484401243f54
     "date-fns": "^4.1.0",
     "file-saver": "^2.0.5",
     "firebase": "^12.0.0",
