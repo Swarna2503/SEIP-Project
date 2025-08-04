@@ -36,18 +36,6 @@ const getToday = () => {
   return `${mm}-${dd}-${yyyy}`; // Keep as MM-DD-YYYY for storage
 };
 
-// const formatForDateInput = (dateStr: string) => {
-//   if (!dateStr) return "";
-//   const [month, day, year] = dateStr.split("-");
-//   return `${year}-${month}-${day}`;
-// };
-
-// const parseDateInput = (dateStr: string) => {
-//   if (!dateStr) return "";
-//   const [year, month, day] = dateStr.split("-");
-//   return `${month.padStart(2, "0")}-${day.padStart(2, "0")}-${year}`;
-// };
-
 
 const STATE_FIELDS = new Set([
   "applicantState",
@@ -921,22 +909,32 @@ export default function Responsive130UForm({
             {f.label}
             {showAsterisk && <span className="text-red-500">*</span>}
           </label>
-          <DatePicker
-            id={f.id}
-            selected={formState[f.id] ? new Date(formState[f.id].split('-')) : null}
-            onChange={(date: Date | null) => {
-              if (date) {
-                const mm = String(date.getMonth() + 1).padStart(2, '0');
-                const dd = String(date.getDate()).padStart(2, '0');
-                const yyyy = date.getFullYear();
-                handleChange(f.id, `${mm}-${dd}-${yyyy}`);
-              } else {
-                handleChange(f.id, ''); // Handle null/clear case
-              }
-            }}
-            dateFormat="MM-dd-yyyy"
-            className={`form-input ${showError ? 'input-error' : ''}`}
-          />
+          {isMobile ? (
+            <input
+              type="date"
+              id={f.id}
+              value={formState[f.id] || ""}
+              onChange={(e) => handleChange(f.id, e.target.value)}
+              className={`form-input ${showError ? 'input-error' : ''}`}
+            />
+          ) : (
+            <DatePicker
+              id={f.id}
+              selected={formState[f.id] ? new Date(formState[f.id]) : null}
+              onChange={(date: Date | null) => {
+                if (date) {
+                  const mm = String(date.getMonth() + 1).padStart(2, '0');
+                  const dd = String(date.getDate()).padStart(2, '0');
+                  const yyyy = date.getFullYear();
+                  handleChange(f.id, `${mm}-${dd}-${yyyy}`);
+                } else {
+                  handleChange(f.id, '');
+                }
+              }}
+              dateFormat="MM-dd-yyyy"
+              className={`form-input ${showError ? 'input-error' : ''}`}
+            />
+          )}
           {showError && <div className="error-message">{err}</div>}
         </div>
       );
