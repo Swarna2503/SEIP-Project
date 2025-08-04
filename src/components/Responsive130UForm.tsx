@@ -1,5 +1,4 @@
 import { useMobile } from '../hooks/isMobile';
-import { useMobile } from '../hooks/isMobile';
 import { useState, useEffect, useRef } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { STATE_ABBREVIATIONS, STATE_NAMES } from '../utils/stateAbbreviations';
@@ -1016,32 +1015,6 @@ export default function Responsive130UForm({
               className={`form-input ${showError ? 'input-error' : ''}`}
             />
           )}
-          {isMobile ? (
-            <input
-              type="date"
-              id={f.id}
-              value={formState[f.id] || ""}
-              onChange={(e) => handleChange(f.id, e.target.value)}
-              className={`form-input ${showError ? 'input-error' : ''}`}
-            />
-          ) : (
-            <DatePicker
-              id={f.id}
-              selected={formState[f.id] ? new Date(formState[f.id]) : null}
-              onChange={(date: Date | null) => {
-                if (date) {
-                  const mm = String(date.getMonth() + 1).padStart(2, '0');
-                  const dd = String(date.getDate()).padStart(2, '0');
-                  const yyyy = date.getFullYear();
-                  handleChange(f.id, `${mm}-${dd}-${yyyy}`);
-                } else {
-                  handleChange(f.id, '');
-                }
-              }}
-              dateFormat="MM-dd-yyyy"
-              className={`form-input ${showError ? 'input-error' : ''}`}
-            />
-          )}
           {showError && <div className="error-message">{err}</div>}
         </div>
       );
@@ -1057,7 +1030,6 @@ export default function Responsive130UForm({
               id={f.id}
               type="checkbox"
               checked={Boolean(formState[f.id])}
-              onChange={(e) => handleChange(f.id, e.target.checked)}
               onChange={(e) => handleChange(f.id, e.target.checked)}
               className={`form-checkbox ${showError ? 'input-error' : ''}`}
             />
@@ -1086,7 +1058,6 @@ export default function Responsive130UForm({
               ref={ref}
               penColor="black"
               canvasProps={{
-                width: isMobile ? 300 : 400,
                 width: isMobile ? 300 : 400,
                 height: 100,
                 className: "signature-canvas",
@@ -1120,11 +1091,9 @@ export default function Responsive130UForm({
             id={f.id}
             value={String(formState[f.id] || "")}
             onChange={(e) => handleChange(f.id, e.target.value)}
-            onChange={(e) => handleChange(f.id, e.target.value)}
             className={`form-input ${showError ? 'input-error' : ''}`}
           >
             <option value="">Select State</option>
-            {STATE_ABBREVIATIONS.map((abbr) => (
             {STATE_ABBREVIATIONS.map((abbr) => (
               <option key={abbr} value={abbr}>
                 {STATE_NAMES[abbr]}
@@ -1148,7 +1117,6 @@ export default function Responsive130UForm({
           id={f.id}
           type="text"
           value={String(formState[f.id] || "")}
-          onChange={(e) => handleChange(f.id, e.target.value)}
           onChange={(e) => handleChange(f.id, e.target.value)}
           className={`form-input ${showError ? 'input-error' : ''}`}
         />
