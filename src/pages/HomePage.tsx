@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/auth";
-import { createApplication, getApplicationByUser } from "../apis/application";
+import { createApplication, getLatestApplication } from "../apis/application";
 import "../styles/home.css";
 
 const idCategories = [
@@ -28,9 +28,15 @@ export default function HomePage() {
 
   const userId = user?.user_id;
   // NEW: track whether we have an existing draft application
-  const [existingAppId, setExistingAppId] = useState<string | null>(null);
+  // const [existingAppId, setExistingAppId] = useState<string | null>(null);
   const [loadingAppCheck, setLoadingAppCheck] = useState(true);
 
+  // new continue logic
+  const [latest, setLatest] = useState<{
+    application_id?: string;
+    status?: string;
+    form_data?: Record<string, any>;
+  }>({});
   // the selected ID type is stored in sessionStorage
   const [selectedIdType, setSelectedIdType] = useState(() => {
     return sessionStorage.getItem("selectedIdType") || "";
@@ -47,19 +53,38 @@ export default function HomePage() {
       setLoadingAppCheck(false);
       return;
     }
-    getApplicationByUser(userId)
+    getLatestApplication(userId)
       .then(res => {
-        if (res.ok && res.data.application_id) {
-          setExistingAppId(res.data.application_id);
+        if (res.ok) {
+          setLatest(res.data);
         }
       })
-      .catch(() => {
-        /* swallow */
+      .catch(err => {
+        console.error("拉取最新草稿失败", err);
       })
       .finally(() => {
         setLoadingAppCheck(false);
       });
   }, [userId]);
+
+  // useEffect(() => {
+  //   if (!userId) {
+  //     setLoadingAppCheck(false);
+  //     return;
+  //   }
+  //   getApplicationByUser(userId)
+  //     .then(res => {
+  //       if (res.ok && res.data.application_id) {
+  //         setExistingAppId(res.data.application_id);
+  //       }
+  //     })
+  //     .catch(() => {
+  //       /* swallow */
+  //     })
+  //     .finally(() => {
+  //       setLoadingAppCheck(false);
+  //     });
+  // }, [userId]);
 
   if (loadingAppCheck) {
     return <div className="loading">Checking for draft…</div>;
@@ -78,12 +103,55 @@ export default function HomePage() {
   };
 
   // handler to continue existing draft
-  const continueDraft = () => {
-    if (!existingAppId) return;
-    navigate("/ocr", {
-      state: { applicationId: existingAppId },
-    });
+  // const continueDraft = () => {
+  //   if (!existingAppId) return;
+  //   navigate("/ocr", {
+  //     state: { applicationId: existingAppId },
+  //   });
+  // };
+  // ← 改动：continueDraft 先查 formState
+  const continueLatest = () => {
+    console.log("continueLatest →", latest);
+    const { application_id, status, form_data } = latest;
+    if (!application_id) {
+      startNew();
+      return;
+    }
+
+    switch (status) {
+      case "draft":
+        return navigate("/ocr", {
+          state: { applicationId: application_id }
+        });
+      case "driver_uploaded":
+        return navigate("/upload-title", {
+          state: { applicationId: application_id }
+        });
+      case "title_uploaded":
+        return navigate("/responsive-form", {
+          state: {
+            applicationId: application_id,
+            // 如果后端带回了 form_data，可以作为初始值
+            ...(form_data ? { titleForm: form_data } : {})
+          }
+        });
+      case "form_completed":
+        return navigate("/signature", {
+          state: { applicationId: application_id }
+        });
+      case "signed":
+      case "pending_signature":
+        return navigate("/email-sent", {
+          state: { applicationId: application_id }
+        });
+      default:
+        // 最保险的兜底逻辑
+        return navigate("/ocr", {
+          state: { applicationId: application_id }
+        });
+    }
   };
+
 
   const handleLogout = () => {
     const confirmLogout = window.confirm("Are you sure you want to log out?");
@@ -154,7 +222,7 @@ export default function HomePage() {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                 <span className="status-badge-pending">Pending</span>
-                {existingAppId ? (
+                {/* {existingAppId ? (
                   <div className="button-group">
                     <button onClick={continueDraft} className="btn primary">
                       Continue Draft →
@@ -167,7 +235,23 @@ export default function HomePage() {
                   <button onClick={startNew} className="btn primary">
                     Start Application →
                   </button>
+                )} */}
+
+                {latest.application_id ? (
+                  <div className="button-group">
+                    <button onClick={continueLatest} className="btn primary">
+                      Continue Latest →
+                    </button>
+                    <button onClick={startNew} className="btn secondary">
+                      Start New Application
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={startNew} className="btn primary">
+                    Start Application →
+                  </button>
                 )}
+
               </div>
             </div>
           </section>

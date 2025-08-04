@@ -44,3 +44,18 @@ export async function deleteApplication(application_id: string) {
   });
   return res;
 }
+
+// ─── 新增：拉取最新的草稿 application + form_data ───
+// 后端对应路由：GET /application/user/{user_id}/latest
+export async function getLatestApplication(user_id: string) {
+  const res = await fetchWrapper(
+    `/application/user/${encodeURIComponent(user_id)}/latest`,
+    { method: "GET" }
+  );
+  return res;  
+  // data: {
+  //   application_id?: string,
+  //   status?: string,
+  //   form_data?: Record<string, any>
+  // }
+}

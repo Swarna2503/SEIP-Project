@@ -1,5 +1,6 @@
 // src/apis/driver_license.ts
 import { getAPIBaseURL } from "./config";
+import { fetchWrapper } from "./fetchWrapper";
 
 export async function getLatestOCR(applicationId: string) {
   const baseURL = await getAPIBaseURL();
@@ -35,4 +36,12 @@ export async function postOCR(file: File, applicationId: string) {
   }
 
   return await response.json();
+}
+
+export async function getLatestDriverLicense(applicationId: string) {
+  // 注意：fetchWrapper 默认会在路径前加 /api
+  return fetchWrapper(
+    `/driverlicense/latest?application_id=${encodeURIComponent(applicationId)}`,
+    { method: "GET" }
+  );
 }

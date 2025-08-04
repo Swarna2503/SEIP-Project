@@ -3,6 +3,8 @@ import { useNavigate, useLocation, useParams } from "react-router-dom";
 import Responsive130UForm from "../components/Responsive130UForm";
 import { fields } from "../components/Responsive130UForm";
 import { STATE_NAMES } from "../utils/stateAbbreviations";
+import { getLatestDriverLicense } from "../apis/driver_license";
+import { getLatestTitle }        from "../apis/title";
 import { getFormState, saveFormState } from "../apis/form";
 import "../styles/responsive-form.css";
 
@@ -12,6 +14,7 @@ interface LocationState {
   titleFile?: File;
   selectedIdType?: string;
   applicationId?: string;
+  titleForm?: Record<string, any>;
 }
 
 function getStateAbbrFromFullNameOrAbbr(input: string): string {
@@ -110,60 +113,103 @@ export default function ResponsiveFormPage() {
     };
   }
 
-  useEffect(() => {
-    // 1. 如果没有 state，跳回首页
-    if (!state) {
-      navigate("/", { replace: true });
+useEffect(() => {
+  // 1) 必须要有 applicationId
+  if (!applicationId) {
+    console.error("Missing applicationId—won't fetch");
+    navigate("/", { replace: true });
+    return;
+  }
+
+  // 解构路由 state
+  const { ocr: dlFromState, titleOcr: titleFromState, titleForm } = state as LocationState;
+
+  // 如果上次导航就把 titleForm 传来了，优先用它
+  if (titleForm && Object.keys(titleForm).length > 0) {
+    console.log("Init with titleForm from state:", titleForm);
+    setFormState(titleForm);
+    setIsLoading(false);
+    return;
+  }
+
+  // 2) 看 sessionStorage
+  const storageKey = `savedFormState_${applicationId}`;
+  const saved = sessionStorage.getItem(storageKey);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      console.log("Init with sessionStorage:", parsed);
+      setFormState(parsed);
+      setIsLoading(false);
       return;
+    } catch (e) {
+      console.error("Parse saved form error:", e);
     }
+  }
 
-    const storageKey = `savedFormState_${applicationId}`;
+  // 3) 最后真正去后端和 OCR 接口拉
+  async function initFromServer() {
+    let dl = dlFromState;
+    let ti = titleFromState;
 
-    // 2. 本地有缓存就直接用
-    const saved = sessionStorage.getItem(storageKey);
-    if (saved) {
+    // 如果路由 state 没带驾驶证 OCR，就去后端接口拉
+    if (!dl) {
       try {
-        setFormState(JSON.parse(saved));
+        if (!applicationId) {
+          console.error("Missing applicationId—won't fetch");
+          navigate("/", { replace: true });
+          return;
+        }
+        const res = await getLatestDriverLicense(applicationId);
+        if (res.ok) {
+          dl = res.data;
+          console.log("Fetched dlOcr from backend:", dl);
+        }
       } catch (e) {
-        console.error("Parse saved form error:", e);
-        // parse 失败，退回到后端拉取
-        fetchFromServer();
-      } finally {
-        setIsLoading(false);
+        console.warn("Failed to fetch dlOcr:", e);
       }
-    } else {
-      // 3. 本地没有，再去后端拉
-      fetchFromServer();
     }
 
-    // 抽出来的后端拉取函数
-    async function fetchFromServer() {
+    if (!ti) {
+      try {
+        if (!applicationId) {
+          console.error("Missing applicationId—won't fetch");
+          navigate("/", { replace: true });
+          return;
+        }
+        ti = await getLatestTitle(applicationId);
+        console.log("▶️ titleOcr flat payload:", ti);
+      } catch (e) {
+        console.warn("Failed to fetch titleOcr:", e);
+      }
+    }
+
+    try {
       if (!applicationId) {
         console.error("Missing applicationId—won't fetch");
-        setIsLoading(false);
+        navigate("/", { replace: true });
         return;
       }
-      try {
-        const { ok, data } = await getFormState(applicationId);
-        if (ok && Object.keys(data).length > 0) {
-          // 后端有，覆盖
-          setFormState(data);
-        } else {
-          // 后端没有，保留 OCR 自动填充的初始值
-          setFormState(
-            mapOcrToFormValues(dlOcr ?? {}, titleOcr ?? {}, selectedIdType)
-          );
-        }
-      } catch (error) {
-        console.error("Error fetching from server:", error);
-        setFormState(
-          mapOcrToFormValues(dlOcr ?? {}, titleOcr ?? {}, selectedIdType)
-        );
-      } finally {
-        setIsLoading(false);
+      const { ok, data } = await getFormState(applicationId);
+      console.log("getFormState returned:", { ok, data });
+
+      if (ok && data.form_data && Object.keys(data.form_data).length > 0) {
+        console.log("Init with form_data from backend:", data.form_data);
+        setFormState(data.form_data);
+      } else {
+        console.log("Fallback to OCR autofill with:", { dl, ti });
+        setFormState(mapOcrToFormValues(dl ?? {}, ti ?? {}, selectedIdType));
       }
+    } catch (error) {
+      console.error("Error fetching formState:", error);
+      setFormState(mapOcrToFormValues(dl ?? {}, ti ?? {}, selectedIdType));
+    } finally {
+      setIsLoading(false);
     }
-  }, [applicationId, dlOcr, titleOcr, selectedIdType, navigate]);
+  }
+
+  initFromServer();
+}, [applicationId, state, selectedIdType, navigate]);
 
   // initialize form state with OCR data
   // const [formState, setFormState] = useState(() =>
