@@ -105,7 +105,6 @@ export async function fillAndFlattenPdf(
       continue;
     }
 
-    // REMOVED: State abbreviation to full name conversion
     await handleField(form, key, val);
   }
 
@@ -151,7 +150,12 @@ export async function fillAndFlattenPdf(
       const y = pageH - pos.y - pos.height;
 
       // Process image
-      const base64 = dataUrl.split(",")[1]!;
+      const base64 = dataUrl.split(",")[1];
+      if (!base64) {
+        console.warn(`⚠️ Invalid data URL for signature ${key}`);
+        continue;
+      }
+
       const imgBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
       
       let img;
