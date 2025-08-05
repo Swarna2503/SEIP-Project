@@ -32,7 +32,6 @@ const getToday = () => {
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
   const yyyy = today.getFullYear();
-  console.log(`getToday: ${mm}-${dd}-${yyyy}`);
   return `${mm}-${dd}-${yyyy}`; // Keep as MM-DD-YYYY for storage
 };
 
@@ -48,7 +47,6 @@ const STATE_FIELDS = new Set([
 ]);
 
 const tradeInRequired = (value: string, formState: Record<string, any>) => {
-  console.log(`tradeInRequired: value=${value}, tradeIn=${formState.tradeIn}`);
   if (!formState.tradeIn) return null;
   if (!value) return "This field is required";
   return null;
@@ -56,17 +54,14 @@ const tradeInRequired = (value: string, formState: Record<string, any>) => {
 
 const validators = {
   required: (value: any) => {
-    console.log(`required: value=${value}, result=${!value ? "This field is required" : null}`);
     return !value ? "This field is required" : null;
   },
   vin: (value: string) => {
-    console.log(`vin: value=${value}, result=${!value ? "VIN is required" : !/^[A-Z0-9]{17}$/i.test(value) ? "VIN must be exactly 17 alphanumeric characters" : null}`);
     if (!value) return "VIN is required";
     if (!/^[A-Z0-9]{17}$/i.test(value)) return "VIN must be exactly 17 alphanumeric characters";
     return null;
   },
   year: (value: string) => {
-    console.log(`year: value=${value}`);
     if (!value) return "Year is required";
     const yearNum = parseInt(value, 10);
     const currentYear = new Date().getFullYear();
@@ -76,34 +71,28 @@ const validators = {
     return null;
   },
   texasLicense: (value: string) => {
-    console.log(`texasLicense: value=${value}, result=${!value ? "Texas License Plate is required" : null}`);
     if (!value) return "Texas License Plate is required";
     return null;
   },
   odometerOptional: (value: string) => {
-    console.log(`odometerOptional: value=${value}, result=${value && !/^\d+$/.test(value) ? "Must be a whole number" : null}`);
     if (value && !/^\d+$/.test(value)) return "Must be a whole number";
     return null;
   },
   zip: (value: string) => {
-    console.log(`zip: value=${value}, result=${!value ? "ZIP code is required" : !/^\d{5}$/.test(value) ? "Must be a 5-digit ZIP code" : null}`);
     if (!value) return "ZIP code is required";
     if (!/^\d{5}$/.test(value)) return "Must be a 5-digit ZIP code";
     return null;
   },
   email: (value: string, formState: Record<string, any>) => {
-    console.log(`email: value=${value}, emailConsent=${formState.emailConsent}, result=${formState.emailConsent && !value ? "Email is required when consent is given" : value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? "Invalid email format" : null}`);
     if (formState.emailConsent && !value) return "Email is required when consent is given";
     if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Invalid email format";
     return null;
   },
   phone: (value: string) => {
-    console.log(`phone: value=${value}, result=${value && !/^\d{10}$/.test(value) ? "Must be 10-digit phone number" : null}`);
     if (value && !/^\d{10}$/.test(value)) return "Must be 10-digit phone number";
     return null;
   },
   date: (value: string) => {
-    console.log(`date: value=${value}`);
     if (!value) return null;
     if (!/^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])-\d{4}$/.test(value)) {
       return "Must be in MM-DD-YYYY format";
@@ -123,33 +112,27 @@ const validators = {
   signatureBlock: (name: string, date: string, formState: Record<string, any>) => {
     const nameValue = formState[name];
     const dateValue = formState[date];
-    console.log(`signatureBlock: name=${nameValue}, date=${dateValue}, result=${(nameValue && !dateValue) || (!nameValue && dateValue) ? "Both name and date are required if either is filled" : null}`);
     if ((nameValue && !dateValue) || (!nameValue && dateValue))
       return "Both name and date are required if either is filled";
     return null;
   },
   otherReason: (value: string, formState: Record<string, any>) => {
-    console.log(`otherReason: value=${value}, otherReason=${formState.otherReason}, result=${formState.otherReason && !value ? "Other reason is required" : null}`);
     if (formState.otherReason && !value) return "Other reason is required";
     return null;
   },
   passportIssuer: (value: string, formState: Record<string, any>) => {
-    console.log(`passportIssuer: value=${value}, passport=${formState.passport}, result=${formState.passport && !value ? "Passport issuer is required" : null}`);
     if (formState.passport && !value) return "Passport issuer is required";
     return null;
   },
   feinEin: (value: string, formState: Record<string, any>) => {
-    console.log(`feinEin: value=${value}, business=${formState.business}, result=${formState.business && !value ? "FEIN/EIN is required for businesses" : null}`);
     if (formState.business && !value) return "FEIN/EIN is required for businesses";
     return null;
   },
   numeric: (value: string) => {
-    console.log(`numeric: value=${value}, result=${value && !/^\d*\.?\d+$/.test(value) ? "Must be a number" : null}`);
     if (value && !/^\d*\.?\d+$/.test(value)) return "Must be a number";
     return null;
   },
   atLeastOne: (values: boolean[]) => {
-    console.log(`atLeastOne: values=${values}, result=${!values.some(v => v) ? "At least one must be selected" : null}`);
     if (!values.some(v => v)) return "At least one must be selected";
     return null;
   }
@@ -821,7 +804,6 @@ export default function Responsive130UForm({
   showAllErrors = false
 }: Responsive130UFormProps) {
   const isMobile = useMobile();
-  console.log("Component initialized, isMobile:", isMobile);
 
   // State management
   const [formState, setFormState] = useState<Record<string, any>>(() => {
@@ -837,26 +819,22 @@ export default function Responsive130UForm({
     if (!state.applicantDate) {
       state.applicantDate = getToday();
     }
-    console.log("Initial formState:", state);
     return state;
   });
 
   const [touched, setTouched] = useState<Record<string, boolean>>(() => {
     const initialTouched: Record<string, boolean> = {};
     fields.forEach(f => { initialTouched[f.id] = false; });
-    console.log("Initial touched:", initialTouched);
     return initialTouched;
   });
   const [errors, setErrors] = useState<Record<string, string>>(() => {
     const initialErrors: Record<string, string> = {};
     fields.forEach(f => { initialErrors[f.id] = ""; });
-    console.log("Initial errors:", initialErrors);
     return initialErrors;
   });
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     "Correction Reason": false
   });
-  console.log("Initial expandedSections:", expandedSections);
 
   // Refs for signatures
   const sellerSigRef = useRef<SigPad>(null);
@@ -865,10 +843,8 @@ export default function Responsive130UForm({
 
   // Utility functions
   const toggleSection = (title: string) => {
-    console.log(`Toggling section: ${title}`);
     setExpandedSections(prev => {
       const newState = { ...prev, [title]: !prev[title] };
-      console.log("Updated expandedSections:", newState);
       return newState;
     });
   };
@@ -879,40 +855,32 @@ export default function Responsive130UForm({
       "OwnerSignature": ownerSigRef,
       "AdditionalSignature": additionalSigRef
     };
-    console.log(`getSigRef called for id: ${id}, returning: ${refMap[id as keyof typeof refMap]?.current ? "ref" : "null"}`);
     return refMap[id as keyof typeof refMap] || null;
   };
 
   const updateSignatureInState = (id: string) => {
-    console.log(`Updating signature for id: ${id}`);
     const ref = getSigRef(id);
     const data = ref?.current?.getCanvas().toDataURL("image/png") || "";
     setFormState(prev => {
       const newState = { ...prev, [id]: data };
-      console.log(`Signature updated, newState[${id}]:`, newState[id]);
       return newState;
     });
   };
 
   // Validation function
   const validateForm = (state: Record<string, any> = formState) => {
-    console.log("Validating form, state:", state);
     const newErrors: Record<string, string> = { ...errors };
     fields.forEach(f => {
       if (f.visibleCondition && !f.visibleCondition(state)) {
-        console.log(`Field ${f.id} is not visible, skipping validation`);
         return;
       }
       if (f.validation) {
         const err = f.validation(state[f.id], state);
         newErrors[f.id] = err || '';
-        console.log(`Validated ${f.id}: value=${state[f.id]}, error=${err}`);
       } else if (f.required && !state[f.id]) {
         newErrors[f.id] = 'This field is required';
-        console.log(`Required field ${f.id} is empty, setting error`);
       } else {
         newErrors[f.id] = '';
-        console.log(`No validation for ${f.id}, clearing error`);
       }
       // Special handling for signature block validation
       if (f.id === "additionalApplicant" || f.id === "additionalApplicantDate") {
@@ -920,43 +888,34 @@ export default function Responsive130UForm({
         if (err) {
           newErrors["additionalApplicant"] = err;
           newErrors["additionalApplicantDate"] = err;
-          console.log(`Signature block error for ${f.id}: ${err}`);
         } else {
           newErrors["additionalApplicant"] = '';
           newErrors["additionalApplicantDate"] = '';
-          console.log(`No signature block error for ${f.id}`);
         }
       }
     });
     setErrors(prev => {
       const updatedErrors = { ...prev, ...newErrors };
-      console.log("Updated errors:", updatedErrors);
       return updatedErrors;
     });
     const isValid = Object.values(newErrors).every(error => !error);
-    console.log("Form validation result: isValid=", isValid);
     return isValid;
   };
 
   // Effect for form state changes
   useEffect(() => {
-    console.log("useEffect triggered, current formState:", formState);
     const isValid = validateForm();
-    console.log("Validation result in useEffect: isValid=", isValid, "errors=", errors);
     onChange?.(formState, isValid, errors);
   }, [formState, onChange]);
 
   // Handle input changes
   const handleChange = (id: string, value: any) => {
-    console.log(`handleChange called for id: ${id}, value:`, value);
     setFormState(prev => {
       const newState = { ...prev, [id]: value };
-      console.log(`New formState after change:`, newState);
       return newState;
     });
     setTouched(prev => {
       const newTouched = { ...prev, [id]: true };
-      console.log(`Updated touched for ${id}:`, newTouched);
       return newTouched;
     });
     validateForm({ ...formState, [id]: value }); // Validate immediately
@@ -965,21 +924,18 @@ export default function Responsive130UForm({
   // Check field visibility
   const isVisible = (f: FieldDef) => {
     const visible = f.visibleCondition ? f.visibleCondition(formState) : true;
-    console.log(`isVisible for ${f.id}:`, visible);
     return visible;
   };
 
   // Render individual field
   const renderField = (f: FieldDef) => {
     if (!isVisible(f)) {
-      console.log(`Field ${f.id} is not visible, skipping render`);
       return null;
     }
     const err = errors[f.id];
     const showError = (touched[f.id] || showAllErrors) && err;
     const showAsterisk = f.required && f.id !== "individual" && f.id !== "usDriverLicense";
     const dateFieldIds = ["applicantDate", "additionalApplicantDate", "firstLienDate"];
-    console.log(`Rendering field ${f.id}, value: ${formState[f.id]}, error: ${err}, showError: ${showError}`);
 
     // Date fields
     if (dateFieldIds.includes(f.id)) {
@@ -1022,7 +978,6 @@ export default function Responsive130UForm({
 
     // Checkbox fields
     if (f.type === "checkbox") {
-      console.log(`Rendering checkbox ${f.id}, value: ${formState[f.id]}, checked: ${Boolean(formState[f.id])}`);
       return (
         <div key={f.id} className="form-field">
           <label className="checkbox-container">
@@ -1046,7 +1001,6 @@ export default function Responsive130UForm({
     // Signature fields
     if (f.type === "signature") {
       const ref = getSigRef(f.id);
-      console.log(`Rendering signature ${f.id}, ref exists: ${!!ref}`);
       return (
         <div key={f.id} className="form-field signature-field">
           <label className="form-label">
@@ -1080,7 +1034,6 @@ export default function Responsive130UForm({
 
     // Dropdown fields (state fields)
     if (STATE_FIELDS.has(f.id)) {
-      console.log(`Rendering dropdown ${f.id}, value: ${formState[f.id]}`);
       return (
         <div key={f.id} className="form-field">
           <label htmlFor={f.id} className="form-label">
@@ -1106,7 +1059,6 @@ export default function Responsive130UForm({
     }
 
     // Default text input
-    console.log(`Rendering text input ${f.id}, value: ${formState[f.id]}`);
     return (
       <div key={f.id} className="form-field">
         <label htmlFor={f.id} className="form-label">
@@ -1129,7 +1081,6 @@ export default function Responsive130UForm({
     <>
       {sections.map((section) => {
         const isExpanded = expandedSections[section.title] || !section.collapsible;
-        console.log(`Rendering section ${section.title}, isExpanded: ${isExpanded}`);
 
         return (
           <section key={section.title} className={sectionClass}>
