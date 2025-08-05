@@ -174,9 +174,9 @@ export default function HomePage() {
 
           {/* 3) Required Document Checklist */}
           <section className="section">
-            <div className="section-header">
-              <span className="icon">🛡️</span>
-              <h2>Required Document Checklist</h2>
+            <div className="section-header-home">
+              <div className="icon">🛡️</div>
+              <div className="section-title">Required Document Checklist</div>
             </div>
 
             {/* a) Texas Certificate of Title */}
