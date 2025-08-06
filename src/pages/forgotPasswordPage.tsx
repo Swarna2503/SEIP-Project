@@ -6,6 +6,7 @@ import '../styles/login.css';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,12 +22,18 @@ export default function ForgotPasswordPage() {
     return "";
   };
 
-  const emailError = validateEmail(email);
+  // const emailError = validateEmail(email);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (emailError) return;
-    
+    // if (emailError) return;
+    const validationError = validateEmail(email);
+    if (validationError) {
+      setEmailError(validationError);
+      return;
+    }
+
+    setEmailError('');
     setLoading(true);
     try {
       await sendPasswordResetEmail(email);
